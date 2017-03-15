@@ -1,0 +1,6 @@
+rootProject.name = 'provisioner'
+
+includeBuild 'api'
+includeBuild 'service'
+includeBuild 'component-test'
+
