@@ -7,9 +7,6 @@ This project provides functionality for provisioning services for tenants.
 ## Abstract
 Mifos I/O is an application framework for digital financial services, a system to support nationwide and cross-national financial transactions and help to level and speed the creation of an inclusive, interconnected digital economy for every nation in the world.
 
-### Needed environment
-Before building and starting the Docker container you need to make sure that needed environment is started too:
-
 ## Versioning
 The version numbers follow the [Semantic Versioning](http://semver.org/) scheme.
 
