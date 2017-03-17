@@ -15,7 +15,6 @@
  */
 package io.mifos.provisioner.internal.util;
 
-import io.mifos.provisioner.internal.util.JdbcUrlBuilder;
 import org.junit.Assert;
 import org.junit.Test;
 

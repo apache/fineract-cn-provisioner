@@ -62,7 +62,7 @@ public class Provisioner {
   public Provisioner(final Environment environment, @Qualifier(ProvisionerConstants.LOGGER_NAME) final Logger logger,
                      final CassandraSessionProvider cassandraSessionProvider,
                      final SaltGenerator saltGenerator, final HashGenerator hashGenerator,
-                     @Value("${provisioner.initialclientid}") final String initialClientId) {
+                     @Value("${system.initialclientid}") final String initialClientId) {
     super();
     this.environment = environment;
     this.logger = logger;

@@ -47,7 +47,7 @@ public class IdentityServiceInitializer {
   private final HashGenerator hashGenerator;
   private final Logger logger;
 
-  @Value("${provisioner.domain}")
+  @Value("${system.domain}")
   private String domain;
 
   public class IdentityServiceInitializationResult {

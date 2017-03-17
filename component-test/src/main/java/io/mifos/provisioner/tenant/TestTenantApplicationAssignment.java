@@ -107,7 +107,7 @@ public class TestTenantApplicationAssignment {
   private static ProvisionerMariaDBInitializer mariaDBInitializer = new ProvisionerMariaDBInitializer();
   private static ProvisionerCassandraInitializer cassandraInitializer = new ProvisionerCassandraInitializer();
   private static SystemSecurityEnvironment systemSecurityEnvironment
-          = new SystemSecurityEnvironment(testEnvironment.getSeshatPublicKey(), testEnvironment.getSeshatPrivateKey());
+          = new SystemSecurityEnvironment(testEnvironment.getSystemPublicKey(), testEnvironment.getSystemPrivateKey());
 
   @ClassRule
   public static TestRule orderClassRules = RuleChain
@@ -137,9 +137,9 @@ public class TestTenantApplicationAssignment {
   @BeforeClass
   public static void setup() throws Exception {
 
-    System.setProperty("provisioner.privateKey.modulus", testEnvironment.getSeshatPrivateKey().getModulus().toString());
-    System.setProperty("provisioner.privateKey.exponent", testEnvironment.getSeshatPrivateKey().getPrivateExponent().toString());
-    System.setProperty("provisioner.initialclientid", CLIENT_ID);
+    System.setProperty("system.privateKey.modulus", testEnvironment.getSystemPrivateKey().getModulus().toString());
+    System.setProperty("system.privateKey.exponent", testEnvironment.getSystemPrivateKey().getPrivateExponent().toString());
+    System.setProperty("system.initialclientid", CLIENT_ID);
   }
 
   @Before

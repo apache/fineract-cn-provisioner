@@ -43,7 +43,7 @@ public class GenerateRsaKeyPair {
     final KeyPair keyPair = keyPairGenerator.genKeyPair();
 
     final RSAPublicKeySpec rsaPublicKeySpec = keyFactory.getKeySpec(keyPair.getPublic(), RSAPublicKeySpec.class);
-    final BufferedWriter bufferedWriterPubKey = Files.newBufferedWriter(Paths.get("/home/mage/seshat.pub"));
+    final BufferedWriter bufferedWriterPubKey = Files.newBufferedWriter(Paths.get("/home/mage/system.pub"));
     bufferedWriterPubKey.write(rsaPublicKeySpec.getModulus().toString());
     bufferedWriterPubKey.newLine();
     bufferedWriterPubKey.write(rsaPublicKeySpec.getPublicExponent().toString());
@@ -51,7 +51,7 @@ public class GenerateRsaKeyPair {
     bufferedWriterPubKey.close();
 
     final RSAPrivateKeySpec rsaPrivateKeySpec = keyFactory.getKeySpec(keyPair.getPrivate(), RSAPrivateKeySpec.class);
-    final BufferedWriter bufferedWriterPrivateKey = Files.newBufferedWriter(Paths.get("/home/mage/seshat"));
+    final BufferedWriter bufferedWriterPrivateKey = Files.newBufferedWriter(Paths.get("/home/mage/system"));
     bufferedWriterPrivateKey.write(rsaPrivateKeySpec.getModulus().toString());
     bufferedWriterPrivateKey.newLine();
     bufferedWriterPrivateKey.write(rsaPrivateKeySpec.getPrivateExponent().toString());

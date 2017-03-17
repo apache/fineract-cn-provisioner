@@ -42,7 +42,7 @@ mariadb:
   user: root
   password: mysql
 
-provisioner:
+system:
   domain: mifos.io
   dataStoreOption: ALL # possible values ALL, CASSANDRA, RDBMS
   token:

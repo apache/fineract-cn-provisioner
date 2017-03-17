@@ -70,8 +70,8 @@ public class ProvisionerServiceConfig {
   public TokenProvider tokenProvider(final Environment environment,
                                      @SuppressWarnings("SpringJavaAutowiringInspection") final SystemAccessTokenSerializer tokenSerializer) {
     return new TokenProvider(
-        new BigInteger(environment.getProperty("provisioner.privateKey.modulus")),
-        new BigInteger(environment.getProperty("provisioner.privateKey.exponent")), tokenSerializer);
+        new BigInteger(environment.getProperty("system.privateKey.modulus")),
+        new BigInteger(environment.getProperty("system.privateKey.exponent")), tokenSerializer);
   }
 
   @Bean

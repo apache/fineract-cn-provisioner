@@ -58,7 +58,7 @@ public class AuthenticationService {
 
   @Value("${spring.application.name}")
   private String applicationName;
-  @Value("${provisioner.token.ttl}")
+  @Value("${system.token.ttl}")
   private Integer ttl;
   private final Logger logger;
   private final CassandraSessionProvider cassandraSessionProvider;
