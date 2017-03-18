@@ -30,7 +30,7 @@ import io.mifos.identity.api.v1.client.IdentityService;
 import io.mifos.identity.api.v1.domain.PermittableGroup;
 import io.mifos.provisioner.ProvisionerCassandraInitializer;
 import io.mifos.provisioner.ProvisionerMariaDBInitializer;
-import io.mifos.provisioner.api.v1.client.ProvisionerService;
+import io.mifos.provisioner.api.v1.client.Provisioner;
 import io.mifos.provisioner.api.v1.domain.*;
 import io.mifos.provisioner.config.ProvisionerConstants;
 import io.mifos.provisioner.config.ProvisionerServiceConfig;
@@ -116,7 +116,7 @@ public class TestTenantApplicationAssignment {
           .around(cassandraInitializer);
 
   @Autowired
-  private ProvisionerService provisionerService;
+  private Provisioner provisioner;
 
   @Autowired
   @Qualifier("tokenProviderSpy")
@@ -145,14 +145,14 @@ public class TestTenantApplicationAssignment {
   @Before
   public void before()
   {
-    final AuthenticationResponse authentication = this.provisionerService.authenticate(
+    final AuthenticationResponse authentication = this.provisioner.authenticate(
             CLIENT_ID, ApiConstants.SYSTEM_SU, ProvisionerConstants.INITIAL_PWD);
     autoSeshat = new AutoSeshat(authentication.getToken());
   }
 
   @After
   public void after() throws InterruptedException {
-    this.provisionerService.deleteTenant(Fixture.getCompTestTenant().getIdentifier());
+    this.provisioner.deleteTenant(Fixture.getCompTestTenant().getIdentifier());
     Thread.sleep(500L);
     autoSeshat.close();
   }
@@ -241,7 +241,7 @@ public class TestTenantApplicationAssignment {
   public void testTenantApplicationAssignment() throws InterruptedException {
     //Create io.mifos.provisioner.tenant
     final Tenant tenant = Fixture.getCompTestTenant();
-    provisionerService.createTenant(tenant);
+    provisioner.createTenant(tenant);
 
 
     //Create identity service application
@@ -251,7 +251,7 @@ public class TestTenantApplicationAssignment {
     identityServiceApp.setDescription("identity manager");
     identityServiceApp.setVendor("fineract");
 
-    provisionerService.createApplication(identityServiceApp);
+    provisioner.createApplication(identityServiceApp);
 
 
     //Assign identity service application.  This requires some mocking since we can't actually call initialize in a component test.
@@ -275,7 +275,7 @@ public class TestTenantApplicationAssignment {
 
     {
       final IdentityManagerInitialization identityServiceAdminInitialization
-              = provisionerService.assignIdentityManager(tenant.getIdentifier(), identityServiceAssigned);
+              = provisioner.assignIdentityManager(tenant.getIdentifier(), identityServiceAssigned);
 
       Assert.assertTrue(verifyInitializeContextAndReturnSignature.isValidSecurityContext());
       Assert.assertNotNull(identityServiceAdminInitialization);
@@ -292,7 +292,7 @@ public class TestTenantApplicationAssignment {
     officeApp.setDescription("organization manager");
     officeApp.setVendor("fineract");
 
-    provisionerService.createApplication(officeApp);
+    provisioner.createApplication(officeApp);
 
 
     //Assign horus application.
@@ -318,7 +318,7 @@ public class TestTenantApplicationAssignment {
     doAnswer(verifyAnubisPermittablesContext).when(anubisMock).getPermittableEndpoints();
 
     {
-      provisionerService.assignApplications(tenant.getIdentifier(), Collections.singletonList(officeAssigned));
+      provisioner.assignApplications(tenant.getIdentifier(), Collections.singletonList(officeAssigned));
       Thread.sleep(500L); //Application assigning is asynchronous.
     }
 

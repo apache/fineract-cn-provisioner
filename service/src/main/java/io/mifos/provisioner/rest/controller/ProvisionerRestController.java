@@ -50,7 +50,7 @@ import java.util.stream.Collectors;
 @SuppressWarnings("unused")
 @RestController
 @RequestMapping("/")
-public class SeshatRestController {
+public class ProvisionerRestController {
 
   private final Logger logger;
   private final AuthenticationService authenticationService;
@@ -60,12 +60,12 @@ public class SeshatRestController {
   private final TenantApplicationService tenantApplicationService;
 
   @Autowired
-  public SeshatRestController(@Qualifier(ProvisionerConstants.LOGGER_NAME) final Logger logger,
-                              final AuthenticationService authenticationService,
-                              final ClientService clientService,
-                              final TenantService tenantService,
-                              final ApplicationService applicationService,
-                              final TenantApplicationService tenantApplicationService) {
+  public ProvisionerRestController(@Qualifier(ProvisionerConstants.LOGGER_NAME) final Logger logger,
+                                   final AuthenticationService authenticationService,
+                                   final ClientService clientService,
+                                   final TenantService tenantService,
+                                   final ApplicationService applicationService,
+                                   final TenantApplicationService tenantApplicationService) {
     super();
     this.logger = logger;
     this.authenticationService = authenticationService;

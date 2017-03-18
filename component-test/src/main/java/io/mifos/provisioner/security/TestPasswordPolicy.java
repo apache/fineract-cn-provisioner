@@ -45,7 +45,7 @@ public class TestPasswordPolicy extends AbstractServiceTest {
     currentPassword = Base64Utils.encodeToString("new-pwd".getBytes());
 
     final AuthenticationResponse authenticate =
-        provisionerService.authenticate(this.getClientId(), ApiConstants.SYSTEM_SU, currentPassword);
+        provisioner.authenticate(this.getClientId(), ApiConstants.SYSTEM_SU, currentPassword);
 
     checkAuthenticationResponse(authenticate);
   }
@@ -58,7 +58,7 @@ public class TestPasswordPolicy extends AbstractServiceTest {
     setPasswordPolicy(passwordPolicy);
 
     final AuthenticationResponse authenticate =
-        provisionerService.authenticate(this.getClientId(), ApiConstants.SYSTEM_SU, currentPassword);
+        provisioner.authenticate(this.getClientId(), ApiConstants.SYSTEM_SU, currentPassword);
 
     checkAuthenticationResponse(authenticate);
   }
@@ -73,16 +73,16 @@ public class TestPasswordPolicy extends AbstractServiceTest {
     currentPassword = Base64Utils.encodeToString("new-pwd".getBytes());
 
     final AuthenticationResponse authenticate =
-        provisionerService.authenticate(this.getClientId(), ApiConstants.SYSTEM_SU, currentPassword);
+        provisioner.authenticate(this.getClientId(), ApiConstants.SYSTEM_SU, currentPassword);
 
     checkAuthenticationResponse(authenticate);
   }
 
   private void setPasswordPolicy(final PasswordPolicy passwordPolicy)
   {
-    final AuthenticationResponse authenticate = provisionerService.authenticate(this.getClientId(), ApiConstants.SYSTEM_SU, currentPassword);
+    final AuthenticationResponse authenticate = provisioner.authenticate(this.getClientId(), ApiConstants.SYSTEM_SU, currentPassword);
     try (final AutoUserContext ignore = new AutoUserContext(ApiConstants.SYSTEM_SU, authenticate.getToken())) {
-      provisionerService.updatePasswordPolicy(ApiConstants.SYSTEM_SU, passwordPolicy);
+      provisioner.updatePasswordPolicy(ApiConstants.SYSTEM_SU, passwordPolicy);
     }
   }
 

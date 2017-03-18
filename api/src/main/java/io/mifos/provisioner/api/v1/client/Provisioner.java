@@ -37,7 +37,7 @@ import io.mifos.core.api.annotation.ThrowsException;
  */
 @SuppressWarnings("unused")
 @FeignClient(name="provisioner-v1", path="/provisioner/v1", configuration=CustomFeignClientsConfiguration.class)
-public interface ProvisionerService {
+public interface Provisioner {
 
 
   @RequestMapping(

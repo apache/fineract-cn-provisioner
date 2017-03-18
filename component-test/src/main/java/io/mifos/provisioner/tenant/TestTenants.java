@@ -40,14 +40,14 @@ public class TestTenants extends AbstractServiceTest {
   @Before
   public void before()
   {
-    final AuthenticationResponse authentication = provisionerService.authenticate(
+    final AuthenticationResponse authentication = provisioner.authenticate(
         this.getClientId(), ApiConstants.SYSTEM_SU, ProvisionerConstants.INITIAL_PWD);
     autoSeshat = new AutoSeshat(authentication.getToken());
   }
 
   @After
   public void after() throws InterruptedException {
-    provisionerService.deleteTenant(Fixture.getCompTestTenant().getIdentifier());
+    provisioner.deleteTenant(Fixture.getCompTestTenant().getIdentifier());
     Thread.sleep(1200L);
     autoSeshat.close();
   }
@@ -55,9 +55,9 @@ public class TestTenants extends AbstractServiceTest {
   @Test
   public void shouldCreateTenant() throws Exception {
     final Tenant tenant = Fixture.getCompTestTenant();
-    provisionerService.createTenant(tenant);
+    provisioner.createTenant(tenant);
 
-    final Tenant tenantCreated = provisionerService.getTenant(tenant.getIdentifier());
+    final Tenant tenantCreated = provisioner.getTenant(tenant.getIdentifier());
 
     Assert.assertNotNull(tenantCreated);
     Assert.assertEquals(tenant.getIdentifier(), tenantCreated.getIdentifier());
@@ -69,26 +69,26 @@ public class TestTenants extends AbstractServiceTest {
 
   @Test(expected = DuplicateIdentifierException.class)
   public void shouldFailCreateDuplicate() {
-    provisionerService.createTenant(Fixture.getCompTestTenant());
-    provisionerService.createTenant(Fixture.getCompTestTenant());
+    provisioner.createTenant(Fixture.getCompTestTenant());
+    provisioner.createTenant(Fixture.getCompTestTenant());
   }
 
   @Test
   public void shouldFindTenant() {
     final Tenant tenant = Fixture.getCompTestTenant();
-    provisionerService.createTenant(tenant);
-    final Tenant foundTenant = provisionerService.getTenant(tenant.getIdentifier());
+    provisioner.createTenant(tenant);
+    final Tenant foundTenant = provisioner.getTenant(tenant.getIdentifier());
     Assert.assertNotNull(foundTenant);
   }
 
   @Test(expected = NotFoundException.class)
   public void shouldFailFindUnknown() {
-    provisionerService.getTenant("unknown");
+    provisioner.getTenant("unknown");
   }
 
   @Test
   public void shouldFetchAll() {
-    provisionerService.createTenant(Fixture.getCompTestTenant());
-    Assert.assertFalse(provisionerService.getTenants().isEmpty());
+    provisioner.createTenant(Fixture.getCompTestTenant());
+    Assert.assertFalse(provisioner.getTenants().isEmpty());
   }
 }

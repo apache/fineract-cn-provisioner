@@ -41,23 +41,23 @@ public class TestApplications extends AbstractServiceTest {
   @Before
   public void before()
   {
-    final AuthenticationResponse authentication = provisionerService.authenticate(
+    final AuthenticationResponse authentication = provisioner.authenticate(
             this.getClientId(), ApiConstants.SYSTEM_SU, ProvisionerConstants.INITIAL_PWD);
     autoSeshat = new AutoSeshat(authentication.getToken());
   }
 
   @After
   public void after() {
-    provisionerService.deleteApplication(Fixture.getApplication().getName());
+    provisioner.deleteApplication(Fixture.getApplication().getName());
     autoSeshat.close();
   }
 
   @Test
   public void shouldCreateApplication() {
     final Application application = Fixture.getApplication();
-    provisionerService.createApplication(application);
+    provisioner.createApplication(application);
 
-    final Application createdApplication = provisionerService.getApplication(application.getName());
+    final Application createdApplication = provisioner.getApplication(application.getName());
 
     Assert.assertNotNull(createdApplication);
     Assert.assertEquals(application.getName(), createdApplication.getName());
@@ -68,25 +68,25 @@ public class TestApplications extends AbstractServiceTest {
 
   @Test
   public void shouldFindApplication() {
-    provisionerService.createApplication(Fixture.getApplication());
-    Assert.assertNotNull(provisionerService.getApplication(Fixture.getApplication().getName()));
+    provisioner.createApplication(Fixture.getApplication());
+    Assert.assertNotNull(provisioner.getApplication(Fixture.getApplication().getName()));
   }
 
   @Test
   public void shouldFetchAll() {
-    provisionerService.createApplication(Fixture.getApplication());
-    Assert.assertFalse(provisionerService.getApplications().isEmpty());
+    provisioner.createApplication(Fixture.getApplication());
+    Assert.assertFalse(provisioner.getApplications().isEmpty());
   }
 
   @Test(expected = DuplicateIdentifierException.class)
   public void shouldFailCreateDuplicate() {
-    provisionerService.createApplication(Fixture.getApplication());
-    provisionerService.createApplication(Fixture.getApplication());
+    provisioner.createApplication(Fixture.getApplication());
+    provisioner.createApplication(Fixture.getApplication());
   }
 
   @Test(expected = NotFoundException.class)
   public void shouldFailFindUnknown() {
-    provisionerService.getApplication("unknown");
+    provisioner.getApplication("unknown");
   }
 
   @Test
@@ -94,18 +94,18 @@ public class TestApplications extends AbstractServiceTest {
     final Application applicationToDelete = new Application();
     applicationToDelete.setName("deleteme");
 
-    provisionerService.createApplication(applicationToDelete);
+    provisioner.createApplication(applicationToDelete);
 
     try {
-      provisionerService.getApplication(applicationToDelete.getName());
+      provisioner.getApplication(applicationToDelete.getName());
     } catch (final RuntimeException ignored) {
       Assert.fail();
     }
 
-    provisionerService.deleteApplication(applicationToDelete.getName());
+    provisioner.deleteApplication(applicationToDelete.getName());
 
     try {
-      provisionerService.getApplication(applicationToDelete.getName());
+      provisioner.getApplication(applicationToDelete.getName());
       Assert.fail();
     }
     catch (final RuntimeException ex) {

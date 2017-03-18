@@ -38,14 +38,14 @@ public class TestClients extends AbstractServiceTest {
   @Before
   public void before()
   {
-    final AuthenticationResponse authentication = provisionerService.authenticate(
+    final AuthenticationResponse authentication = provisioner.authenticate(
         this.getClientId(), ApiConstants.SYSTEM_SU, ProvisionerConstants.INITIAL_PWD);
     autoSeshat = new AutoSeshat(authentication.getToken());
   }
 
   @After
   public void after() {
-    provisionerService.deleteClient(Fixture.getCompTestClient().getName());
+    provisioner.deleteClient(Fixture.getCompTestClient().getName());
     autoSeshat.close();
   }
 
@@ -53,10 +53,10 @@ public class TestClients extends AbstractServiceTest {
   public void shouldCreateClient() {
     final Client client = Fixture.getCompTestClient();
 
-    provisionerService.createClient(client);
+    provisioner.createClient(client);
     //TODO: add waiting?
 
-    final Client newlyCreatedClient = provisionerService.getClient(client.getName());
+    final Client newlyCreatedClient = provisioner.getClient(client.getName());
 
     Assert.assertEquals(client.getName(), newlyCreatedClient.getName());
     Assert.assertEquals(client.getDescription(), newlyCreatedClient.getDescription());
@@ -70,24 +70,24 @@ public class TestClients extends AbstractServiceTest {
     final Client client = new Client();
     client.setName("duplicate-client");
 
-    provisionerService.createClient(client);
-    provisionerService.createClient(client);
+    provisioner.createClient(client);
+    provisioner.createClient(client);
   }
 
   @Test
   public void shouldFindClient() {
-    provisionerService.createClient(Fixture.getCompTestClient());
-    Assert.assertNotNull(provisionerService.getClient(Fixture.getCompTestClient().getName()));
+    provisioner.createClient(Fixture.getCompTestClient());
+    Assert.assertNotNull(provisioner.getClient(Fixture.getCompTestClient().getName()));
   }
 
   @Test(expected = NotFoundException.class)
   public void shouldNotFindClientUnknown() {
-    provisionerService.getClient("unknown-client");
+    provisioner.getClient("unknown-client");
   }
 
   @Test
   public void shouldFetchAllClients() {
-    Assert.assertFalse(provisionerService.getClients().isEmpty());
+    Assert.assertFalse(provisioner.getClients().isEmpty());
   }
 
   @Test
@@ -95,18 +95,18 @@ public class TestClients extends AbstractServiceTest {
     final Client clientToDelete = new Client();
     clientToDelete.setName("deleteme");
 
-    provisionerService.createClient(clientToDelete);
+    provisioner.createClient(clientToDelete);
 
     try {
-      provisionerService.getClient(clientToDelete.getName());
+      provisioner.getClient(clientToDelete.getName());
     } catch (final Exception ex) {
       Assert.fail();
     }
 
-    provisionerService.deleteClient(clientToDelete.getName());
+    provisioner.deleteClient(clientToDelete.getName());
 
     try {
-      provisionerService.getClient(clientToDelete.getName());
+      provisioner.getClient(clientToDelete.getName());
       Assert.fail();
     }
     catch (final RuntimeException ex) {

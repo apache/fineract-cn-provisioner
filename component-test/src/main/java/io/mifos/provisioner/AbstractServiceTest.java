@@ -16,7 +16,7 @@
 package io.mifos.provisioner;
 
 import io.mifos.core.test.env.TestEnvironment;
-import io.mifos.provisioner.api.v1.client.ProvisionerService;
+import io.mifos.provisioner.api.v1.client.Provisioner;
 import io.mifos.provisioner.config.ProvisionerServiceConfig;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -68,7 +68,7 @@ public class AbstractServiceTest {
           .around(cassandraInitializer);
 
   @Autowired
-  protected ProvisionerService provisionerService;
+  protected Provisioner provisioner;
 
   public AbstractServiceTest() {
     super();

@@ -34,22 +34,22 @@ public class TestAuthentication extends AbstractServiceTest {
   @Test
   public void shouldLoginAdmin() {
     final AuthenticationResponse authenticate
-        = provisionerService.authenticate(this.getClientId(), ApiConstants.SYSTEM_SU, ProvisionerConstants.INITIAL_PWD);
+        = provisioner.authenticate(this.getClientId(), ApiConstants.SYSTEM_SU, ProvisionerConstants.INITIAL_PWD);
     Assert.assertNotNull(authenticate.getToken());
   }
 
   @Test(expected = InvalidProvisionerCredentialsException.class)
   public void shouldFailLoginWrongClientId() {
-    provisionerService.authenticate("wrong-client", ApiConstants.SYSTEM_SU, ProvisionerConstants.INITIAL_PWD);
+    provisioner.authenticate("wrong-client", ApiConstants.SYSTEM_SU, ProvisionerConstants.INITIAL_PWD);
   }
 
   @Test(expected = InvalidProvisionerCredentialsException.class)
   public void shouldFailLoginWrongUser() {
-    provisionerService.authenticate(this.getClientId(), "wrong-user", ProvisionerConstants.INITIAL_PWD);
+    provisioner.authenticate(this.getClientId(), "wrong-user", ProvisionerConstants.INITIAL_PWD);
   }
 
   @Test(expected = InvalidProvisionerCredentialsException.class)
   public void shouldFailLoginWrongPassword() {
-    provisionerService.authenticate(this.getClientId(), ApiConstants.SYSTEM_SU, Base64Utils.encodeToString("wrong-pwd".getBytes()));
+    provisioner.authenticate(this.getClientId(), ApiConstants.SYSTEM_SU, Base64Utils.encodeToString("wrong-pwd".getBytes()));
   }
 }

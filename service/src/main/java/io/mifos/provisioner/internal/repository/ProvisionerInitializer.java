@@ -45,9 +45,9 @@ import java.sql.Statement;
 import java.util.Date;
 import java.util.UUID;
 
-@SuppressWarnings({"SqlNoDataSourceInspection", "SqlDialectInspection"})
+@SuppressWarnings({"SqlNoDataSourceInspection", "SqlDialectInspection", "unused"})
 @Component
-public class Provisioner {
+public class ProvisionerInitializer {
 
   private final Environment environment;
   private final Logger logger;
@@ -59,10 +59,10 @@ public class Provisioner {
   private String mariaDBName;
 
   @Autowired
-  public Provisioner(final Environment environment, @Qualifier(ProvisionerConstants.LOGGER_NAME) final Logger logger,
-                     final CassandraSessionProvider cassandraSessionProvider,
-                     final SaltGenerator saltGenerator, final HashGenerator hashGenerator,
-                     @Value("${system.initialclientid}") final String initialClientId) {
+  public ProvisionerInitializer(final Environment environment, @Qualifier(ProvisionerConstants.LOGGER_NAME) final Logger logger,
+                                final CassandraSessionProvider cassandraSessionProvider,
+                                final SaltGenerator saltGenerator, final HashGenerator hashGenerator,
+                                @Value("${system.initialclientid}") final String initialClientId) {
     super();
     this.environment = environment;
     this.logger = logger;
