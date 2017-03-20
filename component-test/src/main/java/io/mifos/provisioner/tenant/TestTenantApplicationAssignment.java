@@ -26,7 +26,7 @@ import io.mifos.core.api.util.ApiConstants;
 import io.mifos.core.api.util.ApiFactory;
 import io.mifos.core.lang.AutoTenantContext;
 import io.mifos.core.test.env.TestEnvironment;
-import io.mifos.identity.api.v1.client.IdentityService;
+import io.mifos.identity.api.v1.client.IdentityManager;
 import io.mifos.identity.api.v1.domain.PermittableGroup;
 import io.mifos.provisioner.ProvisionerCassandraInitializer;
 import io.mifos.provisioner.ProvisionerMariaDBInitializer;
@@ -259,8 +259,8 @@ public class TestTenantApplicationAssignment {
     identityServiceAssigned.setName("identity-v1");
 
 
-    final IdentityService identityServiceMock = Mockito.mock(IdentityService.class);
-    when(applicationCallContextProviderSpy.getApplication(IdentityService.class, "http://xyz.identity:2020/v1")).thenReturn(identityServiceMock);
+    final IdentityManager identityServiceMock = Mockito.mock(IdentityManager.class);
+    when(applicationCallContextProviderSpy.getApplication(IdentityManager.class, "http://xyz.identity:2020/v1")).thenReturn(identityServiceMock);
 
     final VerifyIsisInitializeContext verifyInitializeContextAndReturnSignature;
     try (final AutoTenantContext ignored = new AutoTenantContext(Fixture.TENANT_IDENTIFIER)) {

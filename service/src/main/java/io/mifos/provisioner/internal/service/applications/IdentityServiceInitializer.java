@@ -19,7 +19,7 @@ package io.mifos.provisioner.internal.service.applications;
 import io.mifos.anubis.api.v1.client.Anubis;
 import io.mifos.anubis.api.v1.domain.PermittableEndpoint;
 import io.mifos.anubis.api.v1.domain.Signature;
-import io.mifos.identity.api.v1.client.IdentityService;
+import io.mifos.identity.api.v1.client.IdentityManager;
 import io.mifos.identity.api.v1.client.PermittableGroupAlreadyExistsException;
 import io.mifos.identity.api.v1.client.TenantAlreadyInitializedException;
 import io.mifos.identity.api.v1.domain.PermittableGroup;
@@ -91,7 +91,7 @@ public class IdentityServiceInitializer {
     try (final AutoCloseable ignored
                  = applicationCallContextProvider.getApplicationCallContext(tenantIdentifier, applicationName))
     {
-      final IdentityService identityService = applicationCallContextProvider.getApplication(IdentityService.class, identityManagerUri);
+      final IdentityManager identityService = applicationCallContextProvider.getApplication(IdentityManager.class, identityManagerUri);
       try {
         final String randomPassword = RandomStringUtils.random(8, true, true);
 
@@ -134,7 +134,7 @@ public class IdentityServiceInitializer {
     try (final AutoCloseable ignored
                  = applicationCallContextProvider.getApplicationCallContext(tenantIdentifier, identityManagerApplicationName))
     {
-      final IdentityService identityService = applicationCallContextProvider.getApplication(IdentityService.class, identityManagerApplicationUri);
+      final IdentityManager identityService = applicationCallContextProvider.getApplication(IdentityManager.class, identityManagerApplicationUri);
 
       final List<PermittableGroup> permittableGroups = getPermittableGroups(permittables);
 
@@ -169,7 +169,7 @@ public class IdentityServiceInitializer {
   }
 
   void createOrFindPermittableGroup(
-          final @Nonnull IdentityService identityService,
+          final @Nonnull IdentityManager identityService,
           final @Nonnull PermittableGroup permittableGroup) {
     try {
       identityService.createPermittableGroup(permittableGroup);
