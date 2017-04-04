@@ -15,15 +15,12 @@
  */
 package io.mifos.provisioner.api.v1.domain;
 
-import io.mifos.core.lang.validation.constraints.ValidIdentifier;
+import io.mifos.core.lang.validation.constraints.ValidApplicationName;
 
-import javax.validation.constraints.NotNull;
-
-@SuppressWarnings("unused")
+@SuppressWarnings({"unused", "WeakerAccess"})
 public class AssignedApplication {
 
-  @NotNull
-  @ValidIdentifier
+  @ValidApplicationName
   private String name;
 
   public AssignedApplication() {
