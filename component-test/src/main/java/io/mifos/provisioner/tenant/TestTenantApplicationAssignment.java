@@ -16,6 +16,7 @@
 package io.mifos.provisioner.tenant;
 
 import io.mifos.anubis.api.v1.client.Anubis;
+import io.mifos.anubis.api.v1.domain.ApplicationSignatureSet;
 import io.mifos.anubis.api.v1.domain.PermittableEndpoint;
 import io.mifos.anubis.api.v1.domain.Signature;
 import io.mifos.anubis.provider.SystemRsaKeyProvider;
@@ -25,6 +26,7 @@ import io.mifos.core.api.context.AutoSeshat;
 import io.mifos.core.api.util.ApiConstants;
 import io.mifos.core.api.util.ApiFactory;
 import io.mifos.core.lang.AutoTenantContext;
+import io.mifos.core.lang.security.RsaKeyPairFactory;
 import io.mifos.core.test.env.TestEnvironment;
 import io.mifos.identity.api.v1.client.IdentityManager;
 import io.mifos.identity.api.v1.domain.PermittableGroup;
@@ -107,7 +109,7 @@ public class TestTenantApplicationAssignment {
   private static ProvisionerMariaDBInitializer mariaDBInitializer = new ProvisionerMariaDBInitializer();
   private static ProvisionerCassandraInitializer cassandraInitializer = new ProvisionerCassandraInitializer();
   private static SystemSecurityEnvironment systemSecurityEnvironment
-          = new SystemSecurityEnvironment(testEnvironment.getSystemPublicKey(), testEnvironment.getSystemPrivateKey());
+          = new SystemSecurityEnvironment(testEnvironment.getSystemKeyTimestamp(), testEnvironment.getSystemPublicKey(), testEnvironment.getSystemPrivateKey());
 
   @ClassRule
   public static TestRule orderClassRules = RuleChain
@@ -168,27 +170,34 @@ public class TestTenantApplicationAssignment {
     }
   }
 
-  private class VerifyIsisInitializeContext implements Answer<Signature> {
+  private class VerifyIsisInitializeContext implements Answer<ApplicationSignatureSet> {
 
+    private final String keyTimestamp;
     private final BigInteger modulus;
     private final BigInteger exponent;
 
     private boolean validSecurityContext = false;
 
-    VerifyIsisInitializeContext(final BigInteger modulus, final BigInteger exponent) {
+    VerifyIsisInitializeContext(final String keyTimestamp, final BigInteger modulus, final BigInteger exponent) {
+      this.keyTimestamp = keyTimestamp;
       this.modulus = modulus;
       this.exponent = exponent;
     }
 
     @Override
-    public Signature answer(final InvocationOnMock invocation) throws Throwable {
+    public ApplicationSignatureSet answer(final InvocationOnMock invocation) throws Throwable {
       validSecurityContext = systemSecurityEnvironment.isValidSystemSecurityContext("identity", "1", Fixture.TENANT_IDENTIFIER);
 
       final Signature fakeSignature = new Signature();
       fakeSignature.setPublicKeyMod(modulus);
       fakeSignature.setPublicKeyExp(exponent);
 
-      return fakeSignature;
+      final ApplicationSignatureSet ret = new ApplicationSignatureSet();
+      ret.setTimestamp(keyTimestamp);
+      ret.setApplicationSignature(fakeSignature);
+      ret.setIdentityManagerSignature(fakeSignature);
+
+      return ret;
     }
 
     boolean isValidSecurityContext() {
@@ -209,6 +218,32 @@ public class TestTenantApplicationAssignment {
     public Void answer(final InvocationOnMock invocation) throws Throwable {
       validSecurityContext = systemSecurityEnvironment.isValidSystemSecurityContext(target, "1", Fixture.TENANT_IDENTIFIER);
       return null;
+    }
+
+    boolean isValidSecurityContext() {
+      return validSecurityContext;
+    }
+  }
+
+  private class VerifyCreateSignatureSetContext implements Answer<ApplicationSignatureSet> {
+
+    private boolean validSecurityContext = false;
+    final private String target;
+
+    private VerifyCreateSignatureSetContext(final String target) {
+      this.target = target;
+    }
+
+    @Override
+    public ApplicationSignatureSet answer(final InvocationOnMock invocation) throws Throwable {
+      final String timestamp = invocation.getArgumentAt(0, String.class);
+      final Signature identityManagerSignature = invocation.getArgumentAt(1, Signature.class);
+      validSecurityContext = systemSecurityEnvironment.isValidSystemSecurityContext(target, "1", Fixture.TENANT_IDENTIFIER);
+      final RsaKeyPairFactory.KeyPairHolder keys = RsaKeyPairFactory.createKeyPair();
+      return new ApplicationSignatureSet(
+              timestamp,
+              new Signature(keys.getPublicKeyMod(), keys.getPublicKeyExp()),
+              identityManagerSignature);
     }
 
     boolean isValidSecurityContext() {
@@ -265,6 +300,7 @@ public class TestTenantApplicationAssignment {
     final VerifyIsisInitializeContext verifyInitializeContextAndReturnSignature;
     try (final AutoTenantContext ignored = new AutoTenantContext(Fixture.TENANT_IDENTIFIER)) {
       verifyInitializeContextAndReturnSignature = new VerifyIsisInitializeContext(
+              systemSecurityEnvironment.tenantKeyTimestamp(),
               systemSecurityEnvironment.tenantPublicKey().getModulus(),
               systemSecurityEnvironment.tenantPublicKey().getPublicExponent());
     }
@@ -282,7 +318,7 @@ public class TestTenantApplicationAssignment {
       Assert.assertNotNull(identityServiceAdminInitialization.getAdminPassword());
     }
 
-    verify(applicationCallContextProviderSpy).getApplicationCallContext(Fixture.TENANT_IDENTIFIER, "identity-v1");
+    verify(applicationCallContextProviderSpy, atMost(2)).getApplicationCallContext(Fixture.TENANT_IDENTIFIER, "identity-v1");
 
 
     //Create horus application.
@@ -309,12 +345,15 @@ public class TestTenantApplicationAssignment {
     final PermittableEndpoint mPermittableEndpoint = new PermittableEndpoint("/m/n", "GET", "m");
 
     final VerifyAnubisInitializeContext verifyAnubisInitializeContext;
+    final VerifyCreateSignatureSetContext verifyCreateSignatureSetContext;
     final VerifyAnubisPermittablesContext verifyAnubisPermittablesContext;
     try (final AutoTenantContext ignored = new AutoTenantContext(Fixture.TENANT_IDENTIFIER)) {
       verifyAnubisInitializeContext = new VerifyAnubisInitializeContext("office");
+      verifyCreateSignatureSetContext = new VerifyCreateSignatureSetContext("office");
       verifyAnubisPermittablesContext = new VerifyAnubisPermittablesContext(Arrays.asList(xxPermittableEndpoint, xxPermittableEndpoint, xyPermittableEndpoint, xyGetPermittableEndpoint, mPermittableEndpoint));
     }
-    doAnswer(verifyAnubisInitializeContext).when(anubisMock).initialize(anyObject(), anyObject());
+    doAnswer(verifyAnubisInitializeContext).when(anubisMock).initializeResources();
+    doAnswer(verifyCreateSignatureSetContext).when(anubisMock).createSignatureSet(anyString(), anyObject());
     doAnswer(verifyAnubisPermittablesContext).when(anubisMock).getPermittableEndpoints();
 
     {
@@ -330,6 +369,7 @@ public class TestTenantApplicationAssignment {
     verify(identityServiceMock).createPermittableGroup(new PermittableGroup("m", Collections.singletonList(mPermittableEndpoint)));
 
     Assert.assertTrue(verifyAnubisInitializeContext.isValidSecurityContext());
+    Assert.assertTrue(verifyCreateSignatureSetContext.isValidSecurityContext());
     Assert.assertTrue(verifyAnubisPermittablesContext.isValidSecurityContext());
   }
 }

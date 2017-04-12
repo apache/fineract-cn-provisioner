@@ -16,14 +16,10 @@
 package io.mifos.provisioner.config;
 
 import io.mifos.anubis.config.EnableAnubis;
-import io.mifos.anubis.config.TenantSignatureProvider;
-import io.mifos.anubis.repository.TenantAuthorizationDataRepository;
 import io.mifos.anubis.token.SystemAccessTokenSerializer;
 import io.mifos.core.api.util.ApiFactory;
 import io.mifos.core.async.config.EnableAsync;
 import io.mifos.core.cassandra.config.EnableCassandra;
-import io.mifos.core.cassandra.core.CassandraSessionProvider;
-import io.mifos.core.lang.ApplicationName;
 import io.mifos.core.lang.config.EnableApplicationName;
 import io.mifos.core.lang.config.EnableServiceException;
 import io.mifos.core.mariadb.config.EnableMariaDB;
@@ -50,7 +46,7 @@ import java.math.BigInteger;
 })
 @EnableCrypto
 @EnableAsync
-@EnableAnubis(storeTenantKeysAtInitialization = false)
+@EnableAnubis(provideSignatureRestController = false)
 @EnableMariaDB
 @EnableCassandra
 @EnableServiceException
@@ -70,6 +66,7 @@ public class ProvisionerServiceConfig {
   public TokenProvider tokenProvider(final Environment environment,
                                      @SuppressWarnings("SpringJavaAutowiringInspection") final SystemAccessTokenSerializer tokenSerializer) {
     return new TokenProvider(
+        environment.getProperty("system.publicKey.timestamp"),
         new BigInteger(environment.getProperty("system.privateKey.modulus")),
         new BigInteger(environment.getProperty("system.privateKey.exponent")), tokenSerializer);
   }
@@ -77,21 +74,5 @@ public class ProvisionerServiceConfig {
   @Bean
   public ApiFactory apiFactory(@Qualifier(ProvisionerConstants.LOGGER_NAME) final Logger logger) {
     return new ApiFactory(logger);
-  }
-
-  @Bean
-  public TenantSignatureProvider tenantSignatureProvider()
-  {
-    return tenant -> {
-      throw new IllegalArgumentException("no io.mifos.provisioner.tenant signatures here.");
-    };
-  }
-
-  @Bean
-  public TenantAuthorizationDataRepository tenantAuthorizationDataRepository(
-          final ApplicationName applicationName,
-          final CassandraSessionProvider cassandraSessionProvider)
-  {
-    return new TenantAuthorizationDataRepository(applicationName, cassandraSessionProvider);
   }
 }

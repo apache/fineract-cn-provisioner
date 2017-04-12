@@ -46,12 +46,14 @@ public class AnubisInitializer {
   public void initializeAnubis(final @Nonnull String tenantIdentifier,
                                final @Nonnull String applicationName,
                                final @Nonnull String uri,
+                               final @Nonnull String keyTimestamp,
                                final @Nonnull Signature signature) {
     try (final AutoCloseable ignored
                  = this.applicationCallContextProvider.getApplicationCallContext(tenantIdentifier, applicationName))
     {
       final Anubis anubis = this.applicationCallContextProvider.getApplication(Anubis.class, uri);
-      anubis.initialize(signature.getPublicKeyMod(), signature.getPublicKeyExp());
+      anubis.createSignatureSet(keyTimestamp, signature);
+      anubis.initializeResources();
       logger.info("Anubis initialization for io.mifos.provisioner.tenant '{}' and application '{}' succeeded with signature '{}'.",
               tenantIdentifier, applicationName, signature);
 
