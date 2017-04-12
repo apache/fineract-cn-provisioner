@@ -94,6 +94,7 @@ public class IdentityServiceInitializer {
       final IdentityManager identityService = applicationCallContextProvider.getApplication(IdentityManager.class, identityManagerUri);
       try {
         final String randomPassword = RandomStringUtils.random(8, true, true);
+        this.logger.debug("Generated password for tenant super user '{}' is '{}'.", tenantIdentifier, randomPassword);
 
         final byte[] salt = Base64Utils.encode(("antony" + tenantIdentifier + this.domain).getBytes());
 
