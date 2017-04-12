@@ -17,6 +17,7 @@ package io.mifos.provisioner.api.v1.domain;
 
 import javax.annotation.Nonnull;
 import javax.validation.constraints.NotNull;
+import java.util.Objects;
 
 @SuppressWarnings({"unused", "WeakerAccess"})
 public final class DatabaseConnectionInfo {
@@ -89,5 +90,35 @@ public final class DatabaseConnectionInfo {
 
   public void setPassword(@Nonnull final String password) {
     this.password = password;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    DatabaseConnectionInfo that = (DatabaseConnectionInfo) o;
+    return Objects.equals(driverClass, that.driverClass) &&
+            Objects.equals(databaseName, that.databaseName) &&
+            Objects.equals(host, that.host) &&
+            Objects.equals(port, that.port) &&
+            Objects.equals(user, that.user) &&
+            Objects.equals(password, that.password);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(driverClass, databaseName, host, port, user, password);
+  }
+
+  @Override
+  public String toString() {
+    return "DatabaseConnectionInfo{" +
+            "driverClass='" + driverClass + '\'' +
+            ", databaseName='" + databaseName + '\'' +
+            ", host='" + host + '\'' +
+            ", port='" + port + '\'' +
+            ", user='" + user + '\'' +
+            ", password='" + password + '\'' +
+            '}';
   }
 }

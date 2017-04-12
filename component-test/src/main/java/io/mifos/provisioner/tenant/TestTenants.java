@@ -79,6 +79,7 @@ public class TestTenants extends AbstractServiceTest {
     provisioner.createTenant(tenant);
     final Tenant foundTenant = provisioner.getTenant(tenant.getIdentifier());
     Assert.assertNotNull(foundTenant);
+    Assert.assertEquals(tenant, foundTenant);
   }
 
   @Test(expected = NotFoundException.class)
