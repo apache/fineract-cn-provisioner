@@ -18,18 +18,16 @@ package io.mifos.provisioner.internal.service;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.mapping.Mapper;
 import com.datastax.driver.mapping.Result;
-
-import io.mifos.anubis.api.v1.TokenConstants;
+import io.mifos.anubis.api.v1.domain.ApplicationSignatureSet;
 import io.mifos.anubis.api.v1.domain.Signature;
-import io.mifos.anubis.repository.TenantAuthorizationDataRepository;
+import io.mifos.anubis.config.TenantSignatureRepository;
 import io.mifos.core.cassandra.core.CassandraSessionProvider;
 import io.mifos.core.lang.AutoTenantContext;
 import io.mifos.core.lang.ServiceException;
 import io.mifos.provisioner.internal.repository.ApplicationEntity;
-import io.mifos.provisioner.internal.repository.TenantCassandraRepository;
 import io.mifos.provisioner.internal.repository.TenantApplicationEntity;
+import io.mifos.provisioner.internal.repository.TenantCassandraRepository;
 import io.mifos.provisioner.internal.repository.TenantEntity;
-
 import io.mifos.provisioner.internal.service.applications.AnubisInitializer;
 import io.mifos.provisioner.internal.service.applications.IdentityServiceInitializer;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,7 +36,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
 import javax.annotation.Nonnull;
-import java.util.*;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Component
@@ -47,20 +48,20 @@ public class TenantApplicationService {
   private final CassandraSessionProvider cassandraSessionProvider;
   private final AnubisInitializer anubisInitializer;
   private final IdentityServiceInitializer identityServiceInitializer;
-  private final TenantAuthorizationDataRepository tenantAuthorizationDataRepository;
+  private final TenantSignatureRepository tenantSignatureRepository;
   private final TenantCassandraRepository tenantCassandraRepository;
 
   @Autowired
   public TenantApplicationService(final CassandraSessionProvider cassandraSessionProvider,
                                   final AnubisInitializer anubisInitializer,
                                   final IdentityServiceInitializer identityServiceInitializer,
-                                  final TenantAuthorizationDataRepository tenantAuthorizationDataRepository,
+                                  @SuppressWarnings("SpringJavaAutowiringInspection") final TenantSignatureRepository tenantSignatureRepository,
                                   final TenantCassandraRepository tenantCassandraRepository) {
     super();
     this.cassandraSessionProvider = cassandraSessionProvider;
     this.anubisInitializer = anubisInitializer;
     this.identityServiceInitializer = identityServiceInitializer;
-    this.tenantAuthorizationDataRepository = tenantAuthorizationDataRepository;
+    this.tenantSignatureRepository = tenantSignatureRepository;
     this.tenantCassandraRepository = tenantCassandraRepository;
   }
 
@@ -80,7 +81,7 @@ public class TenantApplicationService {
 
       initializeIsis(x, applicationNameToUriPairs);
 
-      getIsisSignature(x).ifPresent(y -> initializeAnubis(x, y, applicationNameToUriPairs));
+      getLatestIdentityManagerSignatureSet(x).ifPresent(y -> initializeAnubis(x, y.getTimestamp(), y.getIdentityManagerSignature(), applicationNameToUriPairs));
     });
 
     tenantEntity.orElseThrow(
@@ -127,9 +128,9 @@ public class TenantApplicationService {
     }
   }
 
-  private Optional<Signature> getIsisSignature(final @Nonnull TenantEntity tenantEntity) {
+  private Optional<ApplicationSignatureSet> getLatestIdentityManagerSignatureSet(final @Nonnull TenantEntity tenantEntity) {
     try (final AutoTenantContext ignored = new AutoTenantContext(tenantEntity.getIdentifier())) {
-      return tenantAuthorizationDataRepository.getSignature(TokenConstants.VERSION);
+      return tenantSignatureRepository.getLatestSignatureSet();
     }
   }
 
@@ -146,6 +147,7 @@ public class TenantApplicationService {
 
   private void initializeAnubis(
           final @Nonnull TenantEntity tenantEntity,
+          final @Nonnull String keyTimestamp,
           final @Nonnull Signature identityServiceTenantSignature,
           final @Nonnull Set<ApplicationNameToUriPair> applicationNameToUriPairs) {
     applicationNameToUriPairs.forEach(applicationNameUriPair ->
@@ -153,6 +155,7 @@ public class TenantApplicationService {
                     tenantEntity.getIdentifier(),
                     applicationNameUriPair.name,
                     applicationNameUriPair.uri,
+                    keyTimestamp,
                     identityServiceTenantSignature)
     );
   }

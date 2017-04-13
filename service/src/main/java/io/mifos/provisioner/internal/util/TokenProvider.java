@@ -26,10 +26,12 @@ import java.security.spec.RSAPrivateKeySpec;
 import java.util.concurrent.TimeUnit;
 
 public class TokenProvider {
-  private PrivateKey privateKey;
+  private final String keyTimestamp;
+  private final PrivateKey privateKey;
   private final SystemAccessTokenSerializer tokenSerializer;
 
   public TokenProvider(
+      final String keyTimestamp,
       final BigInteger privateKeyModulus,
       final BigInteger privateKeyExponent,
       final SystemAccessTokenSerializer tokenSerializer) {
@@ -37,6 +39,7 @@ public class TokenProvider {
     this.tokenSerializer = tokenSerializer;
 
     try {
+      this.keyTimestamp = keyTimestamp;
       final KeyFactory keyFactory = KeyFactory.getInstance("RSA");
 
       final RSAPrivateKeySpec rsaPrivateKeySpec
@@ -48,8 +51,13 @@ public class TokenProvider {
     }
   }
 
-  public TokenSerializationResult createToken(final String subject, final String audience, final long ttl, final TimeUnit timeUnit) {
+  public TokenSerializationResult createToken(
+          final String subject,
+          final String audience,
+          final long ttl,
+          final TimeUnit timeUnit) {
     SystemAccessTokenSerializer.Specification specification = new SystemAccessTokenSerializer.Specification();
+    specification.setKeyTimestamp(keyTimestamp);
     specification.setTenant(subject);
     specification.setTargetApplicationName(audience);
     specification.setSecondsToLive(timeUnit.toSeconds(ttl));

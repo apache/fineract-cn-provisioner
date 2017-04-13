@@ -15,20 +15,20 @@
  */
 package io.mifos.provisioner.internal.service;
 
-import io.mifos.anubis.api.v1.domain.Signature;
+import io.mifos.anubis.api.v1.domain.ApplicationSignatureSet;
 import io.mifos.anubis.repository.TenantAuthorizationDataRepository;
 import io.mifos.core.lang.AutoTenantContext;
 import io.mifos.core.lang.ServiceException;
-import io.mifos.provisioner.internal.repository.TenantCassandraRepository;
-import io.mifos.provisioner.internal.util.DataSourceUtils;
-import io.mifos.provisioner.internal.util.DataStoreOption;
 import io.mifos.provisioner.api.v1.domain.CassandraConnectionInfo;
 import io.mifos.provisioner.api.v1.domain.DatabaseConnectionInfo;
 import io.mifos.provisioner.api.v1.domain.Tenant;
 import io.mifos.provisioner.config.ProvisionerConstants;
+import io.mifos.provisioner.internal.repository.TenantCassandraRepository;
 import io.mifos.provisioner.internal.repository.TenantDAO;
 import io.mifos.provisioner.internal.repository.TenantEntity;
 import io.mifos.provisioner.internal.service.applications.IdentityServiceInitializer;
+import io.mifos.provisioner.internal.util.DataSourceUtils;
+import io.mifos.provisioner.internal.util.DataStoreOption;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -60,7 +60,7 @@ public class TenantService {
   public TenantService(@Qualifier(ProvisionerConstants.LOGGER_NAME) final Logger logger,
                        final Environment environment,
                        final TenantApplicationService tenantApplicationService,
-                       final TenantAuthorizationDataRepository tenantAuthorizationDataRepository,
+                       @SuppressWarnings("SpringJavaAutowiringInspection") final TenantAuthorizationDataRepository tenantAuthorizationDataRepository,
                        final TenantCassandraRepository tenantCassandraRepository,
                        final IdentityServiceInitializer identityServiceInitializer) {
     super();
@@ -110,10 +110,10 @@ public class TenantService {
     });
 
     IdentityServiceInitializer.IdentityServiceInitializationResult identityServiceInitializationResult = identityServiceInitializer.initializeIsis(tenantIdentifier, identityManagerAppName, identityManagerUri);
-    final Signature identityServiceTenantSignature = identityServiceInitializationResult.getSignature();
+    final ApplicationSignatureSet identityServiceTenantSignatureSet = identityServiceInitializationResult.getSignatureSet();
 
     try (final AutoTenantContext ignored = new AutoTenantContext(tenantIdentifier)) {
-      tenantAuthorizationDataRepository.provisionTenant(identityServiceTenantSignature.getPublicKeyMod(), identityServiceTenantSignature.getPublicKeyExp());
+      tenantAuthorizationDataRepository.createSignatureSet(identityServiceTenantSignatureSet.getTimestamp(), identityServiceTenantSignatureSet.getIdentityManagerSignature());
     }
 
     return identityServiceInitializationResult.getAdminPassword();

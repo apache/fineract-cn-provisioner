@@ -17,8 +17,10 @@ package io.mifos.provisioner.internal.service.applications;
 
 
 import io.mifos.anubis.api.v1.client.Anubis;
+import io.mifos.anubis.api.v1.domain.ApplicationSignatureSet;
 import io.mifos.anubis.api.v1.domain.PermittableEndpoint;
-import io.mifos.anubis.api.v1.domain.Signature;
+import io.mifos.core.api.util.InvalidTokenException;
+import io.mifos.core.lang.ServiceException;
 import io.mifos.identity.api.v1.client.IdentityManager;
 import io.mifos.identity.api.v1.client.PermittableGroupAlreadyExistsException;
 import io.mifos.identity.api.v1.client.TenantAlreadyInitializedException;
@@ -51,22 +53,22 @@ public class IdentityServiceInitializer {
   private String domain;
 
   public class IdentityServiceInitializationResult {
-    private final Signature signature;
+    private final ApplicationSignatureSet signatureSet;
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     private final Optional<String> adminPassword;
 
-    private IdentityServiceInitializationResult(final Signature signature, final String adminPassword) {
-      this.signature = signature;
+    private IdentityServiceInitializationResult(final ApplicationSignatureSet signatureSet, final String adminPassword) {
+      this.signatureSet = signatureSet;
       this.adminPassword = Optional.of(adminPassword);
     }
 
-    private IdentityServiceInitializationResult(final Signature signature) {
-      this.signature = signature;
+    private IdentityServiceInitializationResult(final ApplicationSignatureSet signatureSet) {
+      this.signatureSet = signatureSet;
       this.adminPassword = Optional.empty();
     }
 
-    public Signature getSignature() {
-      return signature;
+    public ApplicationSignatureSet getSignatureSet() {
+      return signatureSet;
     }
 
     public Optional<String> getAdminPassword() {
@@ -89,8 +91,7 @@ public class IdentityServiceInitializer {
           final @Nonnull String applicationName,
           final @Nonnull String identityManagerUri) {
     try (final AutoCloseable ignored
-                 = applicationCallContextProvider.getApplicationCallContext(tenantIdentifier, applicationName))
-    {
+                 = applicationCallContextProvider.getApplicationCallContext(tenantIdentifier, applicationName)) {
       final IdentityManager identityService = applicationCallContextProvider.getApplication(IdentityManager.class, identityManagerUri);
       try {
         final String randomPassword = RandomStringUtils.random(8, true, true);
@@ -103,17 +104,20 @@ public class IdentityServiceInitializer {
         final byte[] hash = this.hashGenerator.hash(encodedPassword, salt, ProvisionerConstants.ITERATION_COUNT, ProvisionerConstants.HASH_LENGTH);
         final String encodedPasswordHash = Base64Utils.encodeToString(hash);
 
-        final Signature signature = identityService.initialize(encodedPasswordHash);
-        logger.info("Isis initialization for io.mifos.provisioner.tenant '{}' succeeded with signature '{}'.", tenantIdentifier, signature);
+        final ApplicationSignatureSet signatureSet = identityService.initialize(encodedPasswordHash);
+        logger.info("Isis initialization for io.mifos.provisioner.tenant '{}' succeeded with signature set '{}'.", tenantIdentifier, signatureSet);
 
-        return new IdentityServiceInitializationResult(signature, encodedPasswordHash);
+        return new IdentityServiceInitializationResult(signatureSet, encodedPasswordHash);
       } catch (final TenantAlreadyInitializedException aiex) {
-        final Signature signature = identityService.getSignature();
-        logger.info("Isis initialization for io.mifos.provisioner.tenant '{}' failed because it was already initialized.  Pre-existing signature '{}'.",
-                tenantIdentifier, signature);
+        final ApplicationSignatureSet signatureSet = identityService.getLatestSignatureSet();
+        logger.info("Isis initialization for io.mifos.provisioner.tenant '{}' failed because it was already initialized.  Pre-existing signature set '{}'.",
+                tenantIdentifier, signatureSet);
 
-        return new IdentityServiceInitializationResult(signature);
+        return new IdentityServiceInitializationResult(signatureSet);
       }
+    } catch (final InvalidTokenException e) {
+      throw ServiceException.conflict("The given identity instance didn't recognize the system token as valid.  " +
+              "Perhaps the system keys for the provisioner or for the identity manager are misconfigured?");
     } catch (final Exception e) {
       throw new IllegalStateException(e);
     }

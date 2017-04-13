@@ -16,6 +16,7 @@
 package io.mifos.provisioner.api.v1.domain;
 
 import javax.validation.constraints.NotNull;
+import java.util.Objects;
 
 @SuppressWarnings("unused")
 public final class Tenant {
@@ -72,5 +73,33 @@ public final class Tenant {
 
   public void setDatabaseConnectionInfo(DatabaseConnectionInfo databaseConnectionInfo) {
     this.databaseConnectionInfo = databaseConnectionInfo;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    Tenant tenant = (Tenant) o;
+    return Objects.equals(identifier, tenant.identifier) &&
+            Objects.equals(name, tenant.name) &&
+            Objects.equals(description, tenant.description) &&
+            Objects.equals(cassandraConnectionInfo, tenant.cassandraConnectionInfo) &&
+            Objects.equals(databaseConnectionInfo, tenant.databaseConnectionInfo);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(identifier, name, description, cassandraConnectionInfo, databaseConnectionInfo);
+  }
+
+  @Override
+  public String toString() {
+    return "Tenant{" +
+            "identifier='" + identifier + '\'' +
+            ", name='" + name + '\'' +
+            ", description='" + description + '\'' +
+            ", cassandraConnectionInfo=" + cassandraConnectionInfo +
+            ", databaseConnectionInfo=" + databaseConnectionInfo +
+            '}';
   }
 }
