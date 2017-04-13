@@ -109,8 +109,7 @@ public class IdentityServiceInitializer {
 
         return new IdentityServiceInitializationResult(signatureSet, encodedPasswordHash);
       } catch (final TenantAlreadyInitializedException aiex) {
-        final Anubis identityManagerAnubisApi = applicationCallContextProvider.getApplication(Anubis.class, identityManagerUri);
-        final ApplicationSignatureSet signatureSet = identityManagerAnubisApi.getLatestSignatureSet();
+        final ApplicationSignatureSet signatureSet = identityService.getLatestSignatureSet();
         logger.info("Isis initialization for io.mifos.provisioner.tenant '{}' failed because it was already initialized.  Pre-existing signature set '{}'.",
                 tenantIdentifier, signatureSet);
 
