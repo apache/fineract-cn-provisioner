@@ -19,6 +19,8 @@ package io.mifos.provisioner.internal.service.applications;
 import io.mifos.anubis.api.v1.client.Anubis;
 import io.mifos.anubis.api.v1.domain.ApplicationSignatureSet;
 import io.mifos.anubis.api.v1.domain.PermittableEndpoint;
+import io.mifos.core.api.util.InvalidTokenException;
+import io.mifos.core.lang.ServiceException;
 import io.mifos.identity.api.v1.client.IdentityManager;
 import io.mifos.identity.api.v1.client.PermittableGroupAlreadyExistsException;
 import io.mifos.identity.api.v1.client.TenantAlreadyInitializedException;
@@ -89,8 +91,7 @@ public class IdentityServiceInitializer {
           final @Nonnull String applicationName,
           final @Nonnull String identityManagerUri) {
     try (final AutoCloseable ignored
-                 = applicationCallContextProvider.getApplicationCallContext(tenantIdentifier, applicationName))
-    {
+                 = applicationCallContextProvider.getApplicationCallContext(tenantIdentifier, applicationName)) {
       final IdentityManager identityService = applicationCallContextProvider.getApplication(IdentityManager.class, identityManagerUri);
       try {
         final String randomPassword = RandomStringUtils.random(8, true, true);
@@ -115,6 +116,9 @@ public class IdentityServiceInitializer {
 
         return new IdentityServiceInitializationResult(signatureSet);
       }
+    } catch (final InvalidTokenException e) {
+      throw ServiceException.conflict("The given identity instance didn't recognize the system token as valid.  " +
+              "Perhaps the system keys for the provisioner or for the identity manager are misconfigured?");
     } catch (final Exception e) {
       throw new IllegalStateException(e);
     }

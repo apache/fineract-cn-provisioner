@@ -15,6 +15,7 @@
  */
 package io.mifos.provisioner.config;
 
+import io.mifos.anubis.config.AnubisConstants;
 import io.mifos.anubis.config.EnableAnubis;
 import io.mifos.anubis.token.SystemAccessTokenSerializer;
 import io.mifos.core.api.util.ApiFactory;
@@ -64,9 +65,12 @@ public class ProvisionerServiceConfig {
 
   @Bean(name = "tokenProvider")
   public TokenProvider tokenProvider(final Environment environment,
-                                     @SuppressWarnings("SpringJavaAutowiringInspection") final SystemAccessTokenSerializer tokenSerializer) {
-    return new TokenProvider(
-        environment.getProperty("system.publicKey.timestamp"),
+                                     @SuppressWarnings("SpringJavaAutowiringInspection") final SystemAccessTokenSerializer tokenSerializer,
+                                     @Qualifier(ProvisionerConstants.LOGGER_NAME) final Logger logger) {
+    final String timestamp = environment.getProperty(AnubisConstants.PUBLIC_KEY_TIMESTAMP_PROPERTY);
+    logger.info("Provisioner key timestamp: " + timestamp);
+
+    return new TokenProvider( timestamp,
         new BigInteger(environment.getProperty("system.privateKey.modulus")),
         new BigInteger(environment.getProperty("system.privateKey.exponent")), tokenSerializer);
   }

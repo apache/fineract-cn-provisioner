@@ -27,7 +27,7 @@ import java.util.concurrent.TimeUnit;
 
 public class TokenProvider {
   private final String keyTimestamp;
-  private PrivateKey privateKey;
+  private final PrivateKey privateKey;
   private final SystemAccessTokenSerializer tokenSerializer;
 
   public TokenProvider(
