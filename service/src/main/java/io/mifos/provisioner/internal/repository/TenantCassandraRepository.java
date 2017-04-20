@@ -15,8 +15,10 @@
  */
 package io.mifos.provisioner.internal.repository;
 
+import com.datastax.driver.core.AuthProvider;
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.DataType;
+import com.datastax.driver.core.PlainTextAuthProvider;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.schemabuilder.SchemaBuilder;
@@ -25,9 +27,11 @@ import com.datastax.driver.mapping.MappingManager;
 import com.datastax.driver.mapping.Result;
 import io.mifos.core.cassandra.core.CassandraSessionProvider;
 import io.mifos.core.cassandra.core.ReplicationStrategyResolver;
+import io.mifos.core.cassandra.util.CassandraConnectorConstants;
 import io.mifos.core.lang.ServiceException;
 import io.mifos.provisioner.internal.util.ContactPointUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Nonnull;
@@ -40,12 +44,16 @@ import java.util.function.Consumer;
  */
 @Component
 public class TenantCassandraRepository {
+  private final Environment environment;
   private final CassandraSessionProvider cassandraSessionProvider;
   private MappingManager mappingManager;
 
   @Autowired
   public TenantCassandraRepository(
-          final @Nonnull CassandraSessionProvider cassandraSessionProvider) {
+      final Environment environment,
+      final @Nonnull CassandraSessionProvider cassandraSessionProvider) {
+    super();
+    this.environment = environment;
     this.cassandraSessionProvider = cassandraSessionProvider;
   }
 
@@ -120,6 +128,13 @@ public class TenantCassandraRepository {
             .builder()
             .withClusterName(tenantEntity.getClusterName());
 
+    if (this.environment.containsProperty(CassandraConnectorConstants.CLUSTER_USER_PROP)) {
+      final String user = this.environment.getProperty(CassandraConnectorConstants.CLUSTER_USER_PROP);
+      final String pwd = this.environment.getProperty(CassandraConnectorConstants.CLUSTER_PASSWORD_PROP);
+
+      final AuthProvider authProvider = new PlainTextAuthProvider(user, pwd);
+      clusterBuilder.withAuthProvider(authProvider);
+    }
     ContactPointUtils.process(clusterBuilder, tenantEntity.getContactPoints());
 
     return clusterBuilder.build();
