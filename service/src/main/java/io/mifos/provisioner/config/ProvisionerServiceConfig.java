@@ -34,6 +34,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
+import org.springframework.web.servlet.config.annotation.PathMatchConfigurer;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
 
 import java.math.BigInteger;
 
@@ -52,7 +54,7 @@ import java.math.BigInteger;
 @EnableCassandra
 @EnableServiceException
 @EnableApplicationName
-public class ProvisionerServiceConfig {
+public class ProvisionerServiceConfig extends WebMvcConfigurerAdapter {
 
   public ProvisionerServiceConfig() {
     super();
@@ -78,5 +80,10 @@ public class ProvisionerServiceConfig {
   @Bean
   public ApiFactory apiFactory(@Qualifier(ProvisionerConstants.LOGGER_NAME) final Logger logger) {
     return new ApiFactory(logger);
+  }
+
+  @Override
+  public void configurePathMatch(final PathMatchConfigurer configurer) {
+    configurer.setUseSuffixPatternMatch(Boolean.FALSE);
   }
 }
