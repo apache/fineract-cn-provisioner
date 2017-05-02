@@ -17,7 +17,7 @@ package io.mifos.provisioner.internal.service.applications;
 
 import io.mifos.anubis.api.v1.client.Anubis;
 import io.mifos.anubis.api.v1.domain.PermittableEndpoint;
-import io.mifos.identity.api.v1.client.IdentityService;
+import io.mifos.identity.api.v1.client.IdentityManager;
 import io.mifos.identity.api.v1.client.PermittableGroupAlreadyExistsException;
 import io.mifos.identity.api.v1.domain.PermittableGroup;
 import org.junit.Assert;
@@ -90,7 +90,7 @@ public class IdentityServiceInitializerTest {
   public void createOrFindPermittableGroupThatAlreadyExists() throws Exception {
     final Logger loggerMock = Mockito.mock(Logger.class);
 
-    final IdentityService identityServiceMock = Mockito.mock(IdentityService.class);
+    final IdentityManager identityServiceMock = Mockito.mock(IdentityManager.class);
     doThrow(PermittableGroupAlreadyExistsException.class).when(identityServiceMock).createPermittableGroup(group1);
     doReturn(reorderedGroup1).when(identityServiceMock).getPermittableGroup(group1.getIdentifier());
 
@@ -101,7 +101,7 @@ public class IdentityServiceInitializerTest {
   public void createOrFindPermittableGroupThatAlreadyExistsDifferently() throws Exception {
     final Logger loggerMock = Mockito.mock(Logger.class);
 
-    final IdentityService identityServiceMock = Mockito.mock(IdentityService.class);
+    final IdentityManager identityServiceMock = Mockito.mock(IdentityManager.class);
     doThrow(PermittableGroupAlreadyExistsException.class).when(identityServiceMock).createPermittableGroup(group1);
     doReturn(changedGroup1).when(identityServiceMock).getPermittableGroup(group1.getIdentifier());
 
@@ -114,7 +114,7 @@ public class IdentityServiceInitializerTest {
   public void createOrFindPermittableGroupWhenIsisCallFails() throws Exception {
     final Logger loggerMock = Mockito.mock(Logger.class);
 
-    final IdentityService identityServiceMock = Mockito.mock(IdentityService.class);
+    final IdentityManager identityServiceMock = Mockito.mock(IdentityManager.class);
     doThrow(IllegalStateException.class).when(identityServiceMock).createPermittableGroup(group1);
     doReturn(changedGroup1).when(identityServiceMock).getPermittableGroup(group1.getIdentifier());
 
