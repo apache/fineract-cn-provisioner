@@ -370,7 +370,7 @@ public class TestTenantApplicationAssignment {
 
     {
       provisioner.assignApplications(tenant.getIdentifier(), Collections.singletonList(officeAssigned));
-      Thread.sleep(500L); //Application assigning is asynchronous.
+      Thread.sleep(1500L); //Application assigning is asynchronous and I have no message queue.
     }
 
     verify(applicationCallContextProviderSpy).getApplicationCallContext(tenant.getIdentifier(), "office-v1");
