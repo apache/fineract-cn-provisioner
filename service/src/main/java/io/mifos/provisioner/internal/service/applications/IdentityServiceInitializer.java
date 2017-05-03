@@ -22,6 +22,7 @@ import io.mifos.anubis.api.v1.domain.ApplicationSignatureSet;
 import io.mifos.anubis.api.v1.domain.PermittableEndpoint;
 import io.mifos.core.api.util.InvalidTokenException;
 import io.mifos.core.lang.ServiceException;
+import io.mifos.core.lang.TenantContextHolder;
 import io.mifos.identity.api.v1.client.*;
 import io.mifos.identity.api.v1.domain.CallEndpointSet;
 import io.mifos.identity.api.v1.domain.Permission;
@@ -222,14 +223,14 @@ public class IdentityServiceInitializer {
           final @Nonnull PermittableGroup permittableGroup) {
     try {
       identityService.createPermittableGroup(permittableGroup);
-      logger.info("Group '{}' successfully created in identity service.", permittableGroup.getIdentifier());
+      logger.info("Group '{}' successfully created in identity service for tenant {}.", permittableGroup.getIdentifier(), TenantContextHolder.checkedGetIdentifier());
     }
     catch (final PermittableGroupAlreadyExistsException groupAlreadyExistsException)
     {
       //if the group already exists, read out and compare.  If the group is the same, there is nothing left to do.
       final PermittableGroup existingGroup = identityService.getPermittableGroup(permittableGroup.getIdentifier());
       if (!existingGroup.getIdentifier().equals(permittableGroup.getIdentifier())) {
-        logger.error("Group '{}' already exists, but has a different name{} (strange).", permittableGroup.getIdentifier(), existingGroup.getIdentifier());
+        logger.error("Group '{}' already exists, but has a different name {} (strange).", permittableGroup.getIdentifier(), existingGroup.getIdentifier());
       }
 
       //Compare as sets because I'm not going to get into a hissy fit over order.
