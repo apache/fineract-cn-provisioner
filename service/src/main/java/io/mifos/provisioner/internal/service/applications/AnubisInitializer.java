@@ -16,12 +16,12 @@
 package io.mifos.provisioner.internal.service.applications;
 
 import io.mifos.anubis.api.v1.client.Anubis;
+import io.mifos.anubis.api.v1.domain.ApplicationSignatureSet;
 import io.mifos.anubis.api.v1.domain.Signature;
 import io.mifos.provisioner.config.ProvisionerConstants;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Nonnull;
@@ -42,20 +42,20 @@ public class AnubisInitializer {
     this.logger = logger;
   }
 
-  @Async
-  public void initializeAnubis(final @Nonnull String tenantIdentifier,
-                               final @Nonnull String applicationName,
-                               final @Nonnull String uri,
-                               final @Nonnull String keyTimestamp,
-                               final @Nonnull Signature signature) {
+  public ApplicationSignatureSet initializeAnubis(final @Nonnull String tenantIdentifier,
+                                                  final @Nonnull String applicationName,
+                                                  final @Nonnull String uri,
+                                                  final @Nonnull String keyTimestamp,
+                                                  final @Nonnull Signature signature) {
     try (final AutoCloseable ignored
                  = this.applicationCallContextProvider.getApplicationCallContext(tenantIdentifier, applicationName))
     {
       final Anubis anubis = this.applicationCallContextProvider.getApplication(Anubis.class, uri);
-      anubis.createSignatureSet(keyTimestamp, signature);
       anubis.initializeResources();
-      logger.info("Anubis initialization for io.mifos.provisioner.tenant '{}' and application '{}' succeeded with signature '{}'.",
-              tenantIdentifier, applicationName, signature);
+      final ApplicationSignatureSet applicationSignatureSet = anubis.createSignatureSet(keyTimestamp, signature);
+      logger.info("Anubis initialization for io.mifos.provisioner.tenant '{}' and application '{}' succeeded with signature set '{}'.",
+              tenantIdentifier, applicationName, applicationSignatureSet);
+      return applicationSignatureSet;
 
     } catch (final Exception e) {
       throw new IllegalStateException(e);

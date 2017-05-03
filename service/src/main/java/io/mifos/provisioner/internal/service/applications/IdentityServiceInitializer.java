@@ -123,11 +123,13 @@ public class IdentityServiceInitializer {
     }
   }
 
-  public void postPermittableGroups(
+  public void postApplicationDetails(
           final @Nonnull String tenantIdentifier,
           final @Nonnull String identityManagerApplicationName,
           final @Nonnull String identityManagerApplicationUri,
-          final @Nonnull String applicationUri)
+          final @Nonnull String applicationName,
+          final @Nonnull String applicationUri,
+          final @Nonnull ApplicationSignatureSet applicationSignatureSet)
   {
     final List<PermittableEndpoint> permittables;
     try (final AutoCloseable ignored = applicationCallContextProvider.getApplicationCallGuestContext(tenantIdentifier)) {

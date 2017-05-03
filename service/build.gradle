@@ -33,6 +33,7 @@ dependencies {
             [group: 'io.mifos.provisioner', name: 'api', version: project.version],
             [group: 'io.mifos.anubis', name: 'library', version: versions.frameworkanubis],
             [group: 'io.mifos.anubis', name: 'api', version: versions.frameworkanubis],
+            [group: 'io.mifos.permitted-feign-client', name: 'api', version: versions.frameworkanput],
             [group: 'io.mifos.identity', name: 'api', version: versions.mifosidentityservice],
             [group: 'com.google.code.gson', name: 'gson', version: versions.gson],
             [group: 'io.mifos.core', name: 'api', version: versions.frameworkapi],

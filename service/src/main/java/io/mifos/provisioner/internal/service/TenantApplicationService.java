@@ -19,7 +19,6 @@ import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.mapping.Mapper;
 import com.datastax.driver.mapping.Result;
 import io.mifos.anubis.api.v1.domain.ApplicationSignatureSet;
-import io.mifos.anubis.api.v1.domain.Signature;
 import io.mifos.anubis.config.TenantSignatureRepository;
 import io.mifos.core.cassandra.core.CassandraSessionProvider;
 import io.mifos.core.lang.AutoTenantContext;
@@ -70,22 +69,39 @@ public class TenantApplicationService {
     Assert.notNull(tenantApplicationEntity);
     Assert.notNull(appNameToUriMap);
 
-    final Optional<TenantEntity> tenantEntity = tenantCassandraRepository.get(tenantApplicationEntity.getTenantIdentifier());
-    tenantEntity.ifPresent(x -> {
-      checkApplications(tenantApplicationEntity.getApplications());
+    final TenantEntity tenantEntity = tenantCassandraRepository.get(tenantApplicationEntity.getTenantIdentifier())
+            .orElseThrow(() -> ServiceException.notFound("Tenant {0} not found.", tenantApplicationEntity.getTenantIdentifier()));
 
-      saveTenantApplicationAssignment(tenantApplicationEntity);
+    checkApplicationsExist(tenantApplicationEntity.getApplications());
 
-      final Set<ApplicationNameToUriPair> applicationNameToUriPairs =
-              getApplicationNameToUriPairs(tenantApplicationEntity, appNameToUriMap);
+    saveTenantApplicationAssignment(tenantApplicationEntity);
 
-      initializeIsis(x, applicationNameToUriPairs);
+    final Set<ApplicationNameToUriPair> applicationNameToUriPairs =
+            getApplicationNameToUriPairs(tenantApplicationEntity, appNameToUriMap);
 
-      getLatestIdentityManagerSignatureSet(x).ifPresent(y -> initializeAnubis(x, y.getTimestamp(), y.getIdentityManagerSignature(), applicationNameToUriPairs));
+    getLatestIdentityManagerSignatureSet(tenantEntity)
+            .ifPresent(y -> initializeSecurity(tenantEntity, y, applicationNameToUriPairs));
+  }
+
+  private void initializeSecurity(final TenantEntity tenantEntity,
+                                  final ApplicationSignatureSet identityManagerSignatureSet,
+                                  final Set<ApplicationNameToUriPair> applicationNameToUriPairs) {
+    applicationNameToUriPairs.forEach(x -> {
+      final ApplicationSignatureSet applicationSignatureSet = anubisInitializer.initializeAnubis(
+              tenantEntity.getIdentifier(),
+              x.name,
+              x.uri,
+              identityManagerSignatureSet.getTimestamp(),
+              identityManagerSignatureSet.getIdentityManagerSignature());
+
+      identityServiceInitializer.postApplicationDetails(
+              tenantEntity.getIdentifier(),
+              tenantEntity.getIdentityManagerApplicationName(),
+              tenantEntity.getIdentityManagerApplicationUri(),
+              x.name,
+              x.uri,
+              applicationSignatureSet);
     });
-
-    tenantEntity.orElseThrow(
-            () -> ServiceException.notFound("Tenant {0} not found.", tenantApplicationEntity.getTenantIdentifier()));
   }
 
   private void saveTenantApplicationAssignment(final @Nonnull TenantApplicationEntity tenantApplicationEntity) {
@@ -134,32 +150,6 @@ public class TenantApplicationService {
     }
   }
 
-  private void initializeIsis(
-          final @Nonnull TenantEntity tenantEntity,
-          final @Nonnull Set<ApplicationNameToUriPair> applicationNameToUriPairs) {
-    applicationNameToUriPairs.forEach(applicationNameUriPair ->
-            identityServiceInitializer.postPermittableGroups(
-                    tenantEntity.getIdentifier(),
-                    tenantEntity.getIdentityManagerApplicationName(),
-                    tenantEntity.getIdentityManagerApplicationUri(),
-                    applicationNameUriPair.uri));
-  }
-
-  private void initializeAnubis(
-          final @Nonnull TenantEntity tenantEntity,
-          final @Nonnull String keyTimestamp,
-          final @Nonnull Signature identityServiceTenantSignature,
-          final @Nonnull Set<ApplicationNameToUriPair> applicationNameToUriPairs) {
-    applicationNameToUriPairs.forEach(applicationNameUriPair ->
-            anubisInitializer.initializeAnubis(
-                    tenantEntity.getIdentifier(),
-                    applicationNameUriPair.name,
-                    applicationNameUriPair.uri,
-                    keyTimestamp,
-                    identityServiceTenantSignature)
-    );
-  }
-
   public TenantApplicationEntity find(final String tenantIdentifier) {
     checkTenant(tenantIdentifier);
 
@@ -195,7 +185,7 @@ public class TenantApplicationService {
     }
   }
 
-  private void checkApplications(final Set<String> applications) {
+  private void checkApplicationsExist(final Set<String> applications) {
     final Mapper<ApplicationEntity> applicationEntityMapper =
             this.cassandraSessionProvider.getAdminSessionMappingManager().mapper(ApplicationEntity.class);
 
