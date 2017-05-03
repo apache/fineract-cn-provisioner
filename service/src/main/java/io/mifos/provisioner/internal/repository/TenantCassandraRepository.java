@@ -21,6 +21,7 @@ import com.datastax.driver.core.DataType;
 import com.datastax.driver.core.PlainTextAuthProvider;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Session;
+import com.datastax.driver.core.exceptions.AlreadyExistsException;
 import com.datastax.driver.core.schemabuilder.SchemaBuilder;
 import com.datastax.driver.mapping.Mapper;
 import com.datastax.driver.mapping.MappingManager;
@@ -102,10 +103,15 @@ public class TenantCassandraRepository {
       throw ServiceException.conflict("Tenant {0} already exists!", tenant.getIdentifier());
     }
     final Session session = this.getCluster(tenant).connect();
-    session.execute("CREATE KEYSPACE " + tenant.getKeyspaceName() + " WITH REPLICATION = " +
-            ReplicationStrategyResolver.replicationStrategy(
-                    tenant.getReplicationType(),
-                    tenant.getReplicas()));
+    try {
+      session.execute("CREATE KEYSPACE " + tenant.getKeyspaceName() + " WITH REPLICATION = " +
+              ReplicationStrategyResolver.replicationStrategy(
+                      tenant.getReplicationType(),
+                      tenant.getReplicas()));
+    }
+    catch (final AlreadyExistsException e) {
+      throw ServiceException.conflict("Tenant {0} already exists!", tenant.getIdentifier());
+    }
 
     final String createCommandSourceTable =
             SchemaBuilder.createTable(tenant.getKeyspaceName(), "command_source")

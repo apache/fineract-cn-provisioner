@@ -175,18 +175,24 @@ public class TestTenantApplicationAssignment {
     private final String keyTimestamp;
     private final BigInteger modulus;
     private final BigInteger exponent;
+    private final String tenantIdentifier;
 
     private boolean validSecurityContext = false;
 
-    VerifyIsisInitializeContext(final String keyTimestamp, final BigInteger modulus, final BigInteger exponent) {
+    VerifyIsisInitializeContext(
+            final String keyTimestamp,
+            final BigInteger modulus,
+            final BigInteger exponent,
+            final String tenantIdentifier) {
       this.keyTimestamp = keyTimestamp;
       this.modulus = modulus;
       this.exponent = exponent;
+      this.tenantIdentifier = tenantIdentifier;
     }
 
     @Override
     public ApplicationSignatureSet answer(final InvocationOnMock invocation) throws Throwable {
-      validSecurityContext = systemSecurityEnvironment.isValidSystemSecurityContext("identity", "1", Fixture.TENANT_IDENTIFIER);
+      validSecurityContext = systemSecurityEnvironment.isValidSystemSecurityContext("identity", "1", tenantIdentifier);
 
       final Signature fakeSignature = new Signature();
       fakeSignature.setPublicKeyMod(modulus);
@@ -209,14 +215,16 @@ public class TestTenantApplicationAssignment {
 
     private boolean validSecurityContext = false;
     final private String target;
+    private final String tenantIdentifier;
 
-    private VerifyAnubisInitializeContext(final String target) {
+    private VerifyAnubisInitializeContext(final String target, String tenantIdentifier) {
       this.target = target;
+      this.tenantIdentifier = tenantIdentifier;
     }
 
     @Override
     public Void answer(final InvocationOnMock invocation) throws Throwable {
-      validSecurityContext = systemSecurityEnvironment.isValidSystemSecurityContext(target, "1", Fixture.TENANT_IDENTIFIER);
+      validSecurityContext = systemSecurityEnvironment.isValidSystemSecurityContext(target, "1", tenantIdentifier);
       return null;
     }
 
@@ -229,16 +237,18 @@ public class TestTenantApplicationAssignment {
 
     private boolean validSecurityContext = false;
     final private String target;
+    private final String tenantIdentifier;
 
-    private VerifyCreateSignatureSetContext(final String target) {
+    private VerifyCreateSignatureSetContext(final String target, final String tenantIdentifier) {
       this.target = target;
+      this.tenantIdentifier = tenantIdentifier;
     }
 
     @Override
     public ApplicationSignatureSet answer(final InvocationOnMock invocation) throws Throwable {
       final String timestamp = invocation.getArgumentAt(0, String.class);
       final Signature identityManagerSignature = invocation.getArgumentAt(1, Signature.class);
-      validSecurityContext = systemSecurityEnvironment.isValidSystemSecurityContext(target, "1", Fixture.TENANT_IDENTIFIER);
+      validSecurityContext = systemSecurityEnvironment.isValidSystemSecurityContext(target, "1", tenantIdentifier);
       final RsaKeyPairFactory.KeyPairHolder keys = RsaKeyPairFactory.createKeyPair();
       return new ApplicationSignatureSet(
               timestamp,
@@ -256,14 +266,16 @@ public class TestTenantApplicationAssignment {
 
     private boolean validSecurityContext = false;
     private final List<PermittableEndpoint> answer;
+    private final String tenantIdentifier;
 
-    private VerifyAnubisPermittablesContext(final List<PermittableEndpoint> answer) {
+    private VerifyAnubisPermittablesContext(final List<PermittableEndpoint> answer, final String tenantIdentifier) {
       this.answer = answer;
+      this.tenantIdentifier = tenantIdentifier;
     }
 
     @Override
     public List<PermittableEndpoint> answer(final InvocationOnMock invocation) throws Throwable {
-      validSecurityContext = systemSecurityEnvironment.isValidGuestSecurityContext(Fixture.TENANT_IDENTIFIER);
+      validSecurityContext = systemSecurityEnvironment.isValidGuestSecurityContext(tenantIdentifier);
       return answer;
     }
 
@@ -298,16 +310,16 @@ public class TestTenantApplicationAssignment {
     when(applicationCallContextProviderSpy.getApplication(IdentityManager.class, "http://xyz.identity:2020/v1")).thenReturn(identityServiceMock);
 
     final VerifyIsisInitializeContext verifyInitializeContextAndReturnSignature;
-    try (final AutoTenantContext ignored = new AutoTenantContext(Fixture.TENANT_IDENTIFIER)) {
+    try (final AutoTenantContext ignored = new AutoTenantContext(tenant.getIdentifier())) {
       verifyInitializeContextAndReturnSignature = new VerifyIsisInitializeContext(
               systemSecurityEnvironment.tenantKeyTimestamp(),
               systemSecurityEnvironment.tenantPublicKey().getModulus(),
-              systemSecurityEnvironment.tenantPublicKey().getPublicExponent());
+              systemSecurityEnvironment.tenantPublicKey().getPublicExponent(), tenant.getIdentifier());
     }
     doAnswer(verifyInitializeContextAndReturnSignature).when(identityServiceMock).initialize(anyString());
 
     final TokenChecker tokenChecker = new TokenChecker();
-    doAnswer(tokenChecker).when(tokenProviderSpy).createToken(Fixture.TENANT_IDENTIFIER, "identity-v1", 2L, TimeUnit.MINUTES);
+    doAnswer(tokenChecker).when(tokenProviderSpy).createToken(tenant.getIdentifier(), "identity-v1", 2L, TimeUnit.MINUTES);
 
     {
       final IdentityManagerInitialization identityServiceAdminInitialization
@@ -318,7 +330,7 @@ public class TestTenantApplicationAssignment {
       Assert.assertNotNull(identityServiceAdminInitialization.getAdminPassword());
     }
 
-    verify(applicationCallContextProviderSpy, atMost(2)).getApplicationCallContext(Fixture.TENANT_IDENTIFIER, "identity-v1");
+    verify(applicationCallContextProviderSpy, atMost(2)).getApplicationCallContext(tenant.getIdentifier(), "identity-v1");
 
 
     //Create horus application.
@@ -347,10 +359,10 @@ public class TestTenantApplicationAssignment {
     final VerifyAnubisInitializeContext verifyAnubisInitializeContext;
     final VerifyCreateSignatureSetContext verifyCreateSignatureSetContext;
     final VerifyAnubisPermittablesContext verifyAnubisPermittablesContext;
-    try (final AutoTenantContext ignored = new AutoTenantContext(Fixture.TENANT_IDENTIFIER)) {
-      verifyAnubisInitializeContext = new VerifyAnubisInitializeContext("office");
-      verifyCreateSignatureSetContext = new VerifyCreateSignatureSetContext("office");
-      verifyAnubisPermittablesContext = new VerifyAnubisPermittablesContext(Arrays.asList(xxPermittableEndpoint, xxPermittableEndpoint, xyPermittableEndpoint, xyGetPermittableEndpoint, mPermittableEndpoint));
+    try (final AutoTenantContext ignored = new AutoTenantContext(tenant.getIdentifier())) {
+      verifyAnubisInitializeContext = new VerifyAnubisInitializeContext("office", tenant.getIdentifier());
+      verifyCreateSignatureSetContext = new VerifyCreateSignatureSetContext("office", tenant.getIdentifier());
+      verifyAnubisPermittablesContext = new VerifyAnubisPermittablesContext(Arrays.asList(xxPermittableEndpoint, xxPermittableEndpoint, xyPermittableEndpoint, xyGetPermittableEndpoint, mPermittableEndpoint), tenant.getIdentifier());
     }
     doAnswer(verifyAnubisInitializeContext).when(anubisMock).initializeResources();
     doAnswer(verifyCreateSignatureSetContext).when(anubisMock).createSignatureSet(anyString(), anyObject());
@@ -361,9 +373,9 @@ public class TestTenantApplicationAssignment {
       Thread.sleep(500L); //Application assigning is asynchronous.
     }
 
-    verify(applicationCallContextProviderSpy).getApplicationCallContext(Fixture.TENANT_IDENTIFIER, "office-v1");
+    verify(applicationCallContextProviderSpy).getApplicationCallContext(tenant.getIdentifier(), "office-v1");
     verify(applicationCallContextProviderSpy, never()).getApplicationCallContext(eq(Fixture.TENANT_NAME), Mockito.anyString());
-    verify(tokenProviderSpy).createToken(Fixture.TENANT_IDENTIFIER, "office-v1", 2L, TimeUnit.MINUTES);
+    verify(tokenProviderSpy).createToken(tenant.getIdentifier(), "office-v1", 2L, TimeUnit.MINUTES);
 
     verify(identityServiceMock).createPermittableGroup(new PermittableGroup("x", Arrays.asList(xxPermittableEndpoint, xyPermittableEndpoint, xyGetPermittableEndpoint)));
     verify(identityServiceMock).createPermittableGroup(new PermittableGroup("m", Collections.singletonList(mPermittableEndpoint)));

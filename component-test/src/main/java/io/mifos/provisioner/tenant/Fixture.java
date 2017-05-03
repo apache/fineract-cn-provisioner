@@ -16,20 +16,17 @@
 package io.mifos.provisioner.tenant;
 
 
+import io.mifos.core.test.env.TestEnvironment;
 import io.mifos.provisioner.api.v1.domain.CassandraConnectionInfo;
 import io.mifos.provisioner.api.v1.domain.DatabaseConnectionInfo;
 import io.mifos.provisioner.api.v1.domain.Tenant;
 
 class Fixture {
-
-  private static Tenant compTestTenant = new Tenant();
-
-  static final String TENANT_IDENTIFIER = "comp-test";
-
   static final String TENANT_NAME = "Comp Test";
 
-  static {
-    compTestTenant.setIdentifier(TENANT_IDENTIFIER);
+  static Tenant getCompTestTenant() {
+    final Tenant compTestTenant = new Tenant();
+    compTestTenant.setIdentifier(TestEnvironment.getRandomTenantName());
     compTestTenant.setName(TENANT_NAME);
     compTestTenant.setDescription("Component Test Tenant");
 
@@ -49,9 +46,7 @@ class Fixture {
     databaseConnectionInfo.setPort("3306");
     databaseConnectionInfo.setUser("root");
     databaseConnectionInfo.setPassword("mysql");
-  }
 
-  static Tenant getCompTestTenant() {
     return compTestTenant;
   }
 }
