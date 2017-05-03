@@ -48,7 +48,6 @@ public class TestTenants extends AbstractServiceTest {
   @After
   public void after() throws InterruptedException {
     provisioner.deleteTenant(Fixture.getCompTestTenant().getIdentifier());
-    Thread.sleep(1200L);
     autoSeshat.close();
   }
 

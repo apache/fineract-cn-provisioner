@@ -4,6 +4,7 @@ version '0.1.0-BUILD-SNAPSHOT'
 ext.versions = [
         mifosidentityservice : '0.1.0-BUILD-SNAPSHOT',
         frameworkanubis      : '0.1.0-BUILD-SNAPSHOT',
+        frameworkanput       : '0.1.0-BUILD-SNAPSHOT',
         frameworkapi         : '0.1.0-BUILD-SNAPSHOT',
         frameworklang        : '0.1.0-BUILD-SNAPSHOT',
         frameworkasync       : '0.1.0-BUILD-SNAPSHOT',
