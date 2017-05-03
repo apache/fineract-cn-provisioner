@@ -17,14 +17,17 @@ package io.mifos.provisioner.internal.service.applications;
 
 
 import io.mifos.anubis.api.v1.client.Anubis;
+import io.mifos.anubis.api.v1.domain.AllowedOperation;
 import io.mifos.anubis.api.v1.domain.ApplicationSignatureSet;
 import io.mifos.anubis.api.v1.domain.PermittableEndpoint;
 import io.mifos.core.api.util.InvalidTokenException;
 import io.mifos.core.lang.ServiceException;
-import io.mifos.identity.api.v1.client.IdentityManager;
-import io.mifos.identity.api.v1.client.PermittableGroupAlreadyExistsException;
-import io.mifos.identity.api.v1.client.TenantAlreadyInitializedException;
+import io.mifos.identity.api.v1.client.*;
+import io.mifos.identity.api.v1.domain.CallEndpointSet;
+import io.mifos.identity.api.v1.domain.Permission;
 import io.mifos.identity.api.v1.domain.PermittableGroup;
+import io.mifos.permittedfeignclient.api.v1.client.ApplicationPermissionRequirements;
+import io.mifos.permittedfeignclient.api.v1.domain.ApplicationPermission;
 import io.mifos.provisioner.config.ProvisionerConstants;
 import io.mifos.tool.crypto.HashGenerator;
 import org.apache.commons.lang.RandomStringUtils;
@@ -38,6 +41,7 @@ import org.springframework.util.Base64Utils;
 import javax.annotation.Nonnull;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author Myrle Krantz
@@ -132,8 +136,11 @@ public class IdentityServiceInitializer {
           final @Nonnull ApplicationSignatureSet applicationSignatureSet)
   {
     final List<PermittableEndpoint> permittables;
+    final List<ApplicationPermission> applicationPermissionRequirements;
     try (final AutoCloseable ignored = applicationCallContextProvider.getApplicationCallGuestContext(tenantIdentifier)) {
       permittables = getPermittables(applicationUri);
+      applicationPermissionRequirements = getApplicationPermissionRequirements(applicationName, applicationUri);
+
     } catch (final Exception e) {
       throw new IllegalStateException(e);
     }
@@ -142,10 +149,16 @@ public class IdentityServiceInitializer {
                  = applicationCallContextProvider.getApplicationCallContext(tenantIdentifier, identityManagerApplicationName))
     {
       final IdentityManager identityService = applicationCallContextProvider.getApplication(IdentityManager.class, identityManagerApplicationUri);
+      identityService.setApplicationSignature(applicationName, applicationSignatureSet.getTimestamp(), applicationSignatureSet.getApplicationSignature());
+      //TODO: I need to know when this is done.  ActiveMQ.  sigh.
 
-      final List<PermittableGroup> permittableGroups = getPermittableGroups(permittables);
-
+      final Stream<PermittableGroup> permittableGroups = getPermittableGroups(permittables);
       permittableGroups.forEach(x -> createOrFindPermittableGroup(identityService, x));
+
+      applicationPermissionRequirements.forEach(x -> createOrFindApplicationPermission(identityService, applicationName, x));
+
+      final Stream<CallEndpointSet> callEndpoints = getCallEndpointSets(applicationPermissionRequirements);
+      callEndpoints.forEach(x -> createOrFindApplicationCallEndpointSet(identityService, applicationName, x));
     } catch (final Exception e) {
       throw new IllegalStateException(e);
     }
@@ -164,15 +177,44 @@ public class IdentityServiceInitializer {
     }
   }
 
-  static List<PermittableGroup> getPermittableGroups(final @Nonnull List<PermittableEndpoint> permittables)
+  private List<ApplicationPermission> getApplicationPermissionRequirements(final @Nonnull String applicationName,
+                                                                           final @Nonnull String applicationUri)
+  {
+    try {
+      final ApplicationPermissionRequirements anput
+              = this.applicationCallContextProvider.getApplication(ApplicationPermissionRequirements.class, applicationUri);
+      return anput.getRequiredPermissions();
+    }
+    catch (final RuntimeException unexpected)
+    {
+      logger.info("Get Required Permissions from application '{}' failed.", applicationName);
+      return Collections.emptyList();
+    }
+  }
+
+  static Stream<PermittableGroup> getPermittableGroups(final @Nonnull List<PermittableEndpoint> permittables)
   {
     final Map<String, Set<PermittableEndpoint>> groupedPermittables = new HashMap<>();
 
     permittables.forEach(x -> groupedPermittables.computeIfAbsent(x.getGroupId(), y -> new LinkedHashSet<>()).add(x));
 
     return groupedPermittables.entrySet().stream()
-            .map(entry -> new PermittableGroup(entry.getKey(), entry.getValue().stream().collect(Collectors.toList())))
-            .collect(Collectors.toList());
+            .map(entry -> new PermittableGroup(entry.getKey(), entry.getValue().stream().collect(Collectors.toList())));
+  }
+
+  private static Stream<CallEndpointSet> getCallEndpointSets(
+          final @Nonnull List<ApplicationPermission> applicationPermissionRequirements) {
+
+    final Map<String, List<String>> permissionsGroupedByEndpointSet = applicationPermissionRequirements.stream()
+            .collect(Collectors.groupingBy(ApplicationPermission::getEndpointSetIdentifier,
+                    Collectors.mapping(x -> x.getPermission().getPermittableEndpointGroupIdentifier(), Collectors.toList())));
+
+    return permissionsGroupedByEndpointSet.entrySet().stream().map(entry -> {
+      final CallEndpointSet ret = new CallEndpointSet();
+      ret.setIdentifier(entry.getKey());
+      ret.setPermittableEndpointGroupIdentifiers(entry.getValue());
+      return ret;
+    });
   }
 
   void createOrFindPermittableGroup(
@@ -200,6 +242,65 @@ public class IdentityServiceInitializer {
     catch (final RuntimeException unexpected)
     {
       logger.error("Creating group '{}' failed.", permittableGroup.getIdentifier(), unexpected);
+    }
+  }
+
+  private void createOrFindApplicationPermission(
+          final @Nonnull IdentityManager identityService,
+          final @Nonnull String applicationName,
+          final @Nonnull ApplicationPermission applicationPermission) {
+    try {
+      identityService.createApplicationPermission(applicationName, applicationPermission.getPermission());
+    }
+    catch (final ApplicationPermissionAlreadyExistsException alreadyExistsException)
+    {
+      //if exists, read out and compare.  If is the same, there is nothing left to do.
+      final Permission existing = identityService.getApplicationPermission(
+              applicationName, applicationPermission.getPermission().getPermittableEndpointGroupIdentifier());
+      if (!existing.getPermittableEndpointGroupIdentifier().equals(applicationPermission.getPermission().getPermittableEndpointGroupIdentifier())) {
+        logger.error("Application permission '{}' already exists, but has a different name {} (strange).",
+                applicationPermission.getPermission().getPermittableEndpointGroupIdentifier(), existing.getPermittableEndpointGroupIdentifier());
+      }
+
+      final Set<AllowedOperation> existingAllowedOperations = existing.getAllowedOperations();
+      final Set<AllowedOperation> newAllowedOperations = applicationPermission.getPermission().getAllowedOperations();
+      if (!existingAllowedOperations.equals(newAllowedOperations)) {
+        logger.error("Permission '{}' already exists, but has different contents.", applicationPermission.getPermission().getPermittableEndpointGroupIdentifier());
+      }
+    }
+    catch (final RuntimeException unexpected)
+    {
+      logger.error("Creating permission '{}' failed.", applicationPermission.getPermission().getPermittableEndpointGroupIdentifier(), unexpected);
+    }
+  }
+
+  private void createOrFindApplicationCallEndpointSet(
+          final @Nonnull IdentityManager identityService,
+          final @Nonnull String applicationName,
+          final @Nonnull CallEndpointSet callEndpointSet) {
+    try {
+      identityService.createApplicationCallEndpointSet(applicationName, callEndpointSet);
+    }
+    catch (final CallEndpointSetAlreadyExistsException alreadyExistsException)
+    {
+      //if already exists, read out and compare.  If is the same, there is nothing left to do.
+      final CallEndpointSet existing = identityService.getApplicationCallEndpointSet(
+              applicationName, callEndpointSet.getIdentifier());
+      if (!existing.getIdentifier().equals(callEndpointSet.getIdentifier())) {
+        logger.error("Application call endpoint set '{}' already exists, but has a different name {} (strange).",
+                callEndpointSet.getIdentifier(), existing.getIdentifier());
+      }
+
+      //Compare as sets because I'm not going to get into a hissy fit over order.
+      final Set<String> existingPermittableEndpoints = new HashSet<>(existing.getPermittableEndpointGroupIdentifiers());
+      final Set<String> newPermittableEndpoints = new HashSet<>(callEndpointSet.getPermittableEndpointGroupIdentifiers());
+      if (!existingPermittableEndpoints.equals(newPermittableEndpoints)) {
+        logger.error("Application call endpoint set '{}' already exists, but has different contents.", callEndpointSet.getIdentifier());
+      }
+    }
+    catch (final RuntimeException unexpected)
+    {
+      logger.error("Creating application call endpoint set '{}' failed.", callEndpointSet.getIdentifier(), unexpected);
     }
   }
 }

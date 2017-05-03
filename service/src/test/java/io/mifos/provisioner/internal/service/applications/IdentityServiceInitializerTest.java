@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.isA;
@@ -76,13 +77,13 @@ public class IdentityServiceInitializerTest {
   public void getPermittableGroups() throws Exception {
 
     final List<PermittableEndpoint> permittableEndpoints = Arrays.asList(abcPost1, abcGet1, defGet1, abcPost2, abcGet2, defGet2, defGet3);
-    final List<PermittableGroup> ret = IdentityServiceInitializer.getPermittableGroups(permittableEndpoints);
+    final List<PermittableGroup> ret = IdentityServiceInitializer.getPermittableGroups(permittableEndpoints).collect(Collectors.toList());
     Assert.assertEquals(ret, Arrays.asList(group1, group2, group3));
   }
 
   @Test
   public void getPermittableGroupsOnEmptyList() throws Exception {
-    final List<PermittableGroup> ret = IdentityServiceInitializer.getPermittableGroups(Collections.emptyList());
+    final List<PermittableGroup> ret = IdentityServiceInitializer.getPermittableGroups(Collections.emptyList()).collect(Collectors.toList());
     Assert.assertEquals(ret, Collections.emptyList());
   }
 

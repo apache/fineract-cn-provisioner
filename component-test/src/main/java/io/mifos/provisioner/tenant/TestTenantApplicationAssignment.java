@@ -16,6 +16,7 @@
 package io.mifos.provisioner.tenant;
 
 import io.mifos.anubis.api.v1.client.Anubis;
+import io.mifos.anubis.api.v1.domain.AllowedOperation;
 import io.mifos.anubis.api.v1.domain.ApplicationSignatureSet;
 import io.mifos.anubis.api.v1.domain.PermittableEndpoint;
 import io.mifos.anubis.api.v1.domain.Signature;
@@ -29,7 +30,11 @@ import io.mifos.core.lang.AutoTenantContext;
 import io.mifos.core.lang.security.RsaKeyPairFactory;
 import io.mifos.core.test.env.TestEnvironment;
 import io.mifos.identity.api.v1.client.IdentityManager;
+import io.mifos.identity.api.v1.domain.CallEndpointSet;
+import io.mifos.identity.api.v1.domain.Permission;
 import io.mifos.identity.api.v1.domain.PermittableGroup;
+import io.mifos.permittedfeignclient.api.v1.client.ApplicationPermissionRequirements;
+import io.mifos.permittedfeignclient.api.v1.domain.ApplicationPermission;
 import io.mifos.provisioner.ProvisionerCassandraInitializer;
 import io.mifos.provisioner.ProvisionerMariaDBInitializer;
 import io.mifos.provisioner.api.v1.client.Provisioner;
@@ -235,11 +240,13 @@ public class TestTenantApplicationAssignment {
 
   private class VerifyCreateSignatureSetContext implements Answer<ApplicationSignatureSet> {
 
+    private final RsaKeyPairFactory.KeyPairHolder answer;
     private boolean validSecurityContext = false;
     final private String target;
     private final String tenantIdentifier;
 
-    private VerifyCreateSignatureSetContext(final String target, final String tenantIdentifier) {
+    private VerifyCreateSignatureSetContext(final RsaKeyPairFactory.KeyPairHolder answer, final String target, final String tenantIdentifier) {
+      this.answer = answer;
       this.target = target;
       this.tenantIdentifier = tenantIdentifier;
     }
@@ -249,10 +256,10 @@ public class TestTenantApplicationAssignment {
       final String timestamp = invocation.getArgumentAt(0, String.class);
       final Signature identityManagerSignature = invocation.getArgumentAt(1, Signature.class);
       validSecurityContext = systemSecurityEnvironment.isValidSystemSecurityContext(target, "1", tenantIdentifier);
-      final RsaKeyPairFactory.KeyPairHolder keys = RsaKeyPairFactory.createKeyPair();
+
       return new ApplicationSignatureSet(
               timestamp,
-              new Signature(keys.getPublicKeyMod(), keys.getPublicKeyExp()),
+              new Signature(answer.getPublicKeyMod(), answer.getPublicKeyExp()),
               identityManagerSignature);
     }
 
@@ -275,6 +282,29 @@ public class TestTenantApplicationAssignment {
 
     @Override
     public List<PermittableEndpoint> answer(final InvocationOnMock invocation) throws Throwable {
+      validSecurityContext = systemSecurityEnvironment.isValidGuestSecurityContext(tenantIdentifier);
+      return answer;
+    }
+
+    boolean isValidSecurityContext() {
+      return validSecurityContext;
+    }
+  }
+
+
+  private class VerifyAnputRequiredPermissionsContext implements Answer<List<ApplicationPermission>> {
+
+    private boolean validSecurityContext = false;
+    private final List<ApplicationPermission> answer;
+    private final String tenantIdentifier;
+
+    private VerifyAnputRequiredPermissionsContext(final List<ApplicationPermission> answer, final String tenantIdentifier) {
+      this.answer = answer;
+      this.tenantIdentifier = tenantIdentifier;
+    }
+
+    @Override
+    public List<ApplicationPermission> answer(final InvocationOnMock invocation) throws Throwable {
       validSecurityContext = systemSecurityEnvironment.isValidGuestSecurityContext(tenantIdentifier);
       return answer;
     }
@@ -350,23 +380,34 @@ public class TestTenantApplicationAssignment {
     final Anubis anubisMock = Mockito.mock(Anubis.class);
     when(applicationCallContextProviderSpy.getApplication(Anubis.class, "http://xyz.office:2021/v1")).thenReturn(anubisMock);
 
+    final ApplicationPermissionRequirements anputMock = Mockito.mock(ApplicationPermissionRequirements.class);
+    when(applicationCallContextProviderSpy.getApplication(ApplicationPermissionRequirements.class, "http://xyz.office:2021/v1")).thenReturn(anputMock);
+
+    final RsaKeyPairFactory.KeyPairHolder keysInApplicationSignature = RsaKeyPairFactory.createKeyPair();
 
     final PermittableEndpoint xxPermittableEndpoint = new PermittableEndpoint("/x/y", "POST", "x");
     final PermittableEndpoint xyPermittableEndpoint = new PermittableEndpoint("/y/z", "POST", "x");
     final PermittableEndpoint xyGetPermittableEndpoint = new PermittableEndpoint("/y/z", "GET", "x");
     final PermittableEndpoint mPermittableEndpoint = new PermittableEndpoint("/m/n", "GET", "m");
 
+    final ApplicationPermission forFooPermission = new ApplicationPermission("forPurposeFoo", new Permission("x", AllowedOperation.ALL));
+    final ApplicationPermission forBarPermission = new ApplicationPermission("forPurposeBar", new Permission("m", Collections.singleton(AllowedOperation.READ)));
+
     final VerifyAnubisInitializeContext verifyAnubisInitializeContext;
     final VerifyCreateSignatureSetContext verifyCreateSignatureSetContext;
     final VerifyAnubisPermittablesContext verifyAnubisPermittablesContext;
+    final VerifyAnputRequiredPermissionsContext verifyAnputRequiredPermissionsContext;
     try (final AutoTenantContext ignored = new AutoTenantContext(tenant.getIdentifier())) {
       verifyAnubisInitializeContext = new VerifyAnubisInitializeContext("office", tenant.getIdentifier());
-      verifyCreateSignatureSetContext = new VerifyCreateSignatureSetContext("office", tenant.getIdentifier());
+      verifyCreateSignatureSetContext = new VerifyCreateSignatureSetContext(keysInApplicationSignature, "office", tenant.getIdentifier());
       verifyAnubisPermittablesContext = new VerifyAnubisPermittablesContext(Arrays.asList(xxPermittableEndpoint, xxPermittableEndpoint, xyPermittableEndpoint, xyGetPermittableEndpoint, mPermittableEndpoint), tenant.getIdentifier());
+      verifyAnputRequiredPermissionsContext = new VerifyAnputRequiredPermissionsContext(Arrays.asList(forFooPermission, forBarPermission), tenant.getIdentifier());
     }
     doAnswer(verifyAnubisInitializeContext).when(anubisMock).initializeResources();
     doAnswer(verifyCreateSignatureSetContext).when(anubisMock).createSignatureSet(anyString(), anyObject());
     doAnswer(verifyAnubisPermittablesContext).when(anubisMock).getPermittableEndpoints();
+    doAnswer(verifyAnputRequiredPermissionsContext).when(anputMock).getRequiredPermissions();
+
 
     {
       provisioner.assignApplications(tenant.getIdentifier(), Collections.singletonList(officeAssigned));
@@ -377,11 +418,22 @@ public class TestTenantApplicationAssignment {
     verify(applicationCallContextProviderSpy, never()).getApplicationCallContext(eq(Fixture.TENANT_NAME), Mockito.anyString());
     verify(tokenProviderSpy).createToken(tenant.getIdentifier(), "office-v1", 2L, TimeUnit.MINUTES);
 
-    verify(identityServiceMock).createPermittableGroup(new PermittableGroup("x", Arrays.asList(xxPermittableEndpoint, xyPermittableEndpoint, xyGetPermittableEndpoint)));
-    verify(identityServiceMock).createPermittableGroup(new PermittableGroup("m", Collections.singletonList(mPermittableEndpoint)));
+    try (final AutoTenantContext ignored = new AutoTenantContext(tenant.getIdentifier())) {
+      verify(identityServiceMock).setApplicationSignature(
+              "office-v1",
+              systemSecurityEnvironment.tenantKeyTimestamp(),
+              new Signature(keysInApplicationSignature.getPublicKeyMod(), keysInApplicationSignature.getPublicKeyExp()));
+      verify(identityServiceMock).createPermittableGroup(new PermittableGroup("x", Arrays.asList(xxPermittableEndpoint, xyPermittableEndpoint, xyGetPermittableEndpoint)));
+      verify(identityServiceMock).createPermittableGroup(new PermittableGroup("m", Collections.singletonList(mPermittableEndpoint)));
+      verify(identityServiceMock).createApplicationPermission("office-v1", new Permission("x", AllowedOperation.ALL));
+      verify(identityServiceMock).createApplicationPermission("office-v1", new Permission("m", Collections.singleton(AllowedOperation.READ)));
+      verify(identityServiceMock).createApplicationCallEndpointSet("office-v1", new CallEndpointSet("forPurposeFoo", Collections.singletonList("x")));
+      verify(identityServiceMock).createApplicationCallEndpointSet("office-v1", new CallEndpointSet("forPurposeBar", Collections.singletonList("m")));
+    }
 
     Assert.assertTrue(verifyAnubisInitializeContext.isValidSecurityContext());
     Assert.assertTrue(verifyCreateSignatureSetContext.isValidSecurityContext());
     Assert.assertTrue(verifyAnubisPermittablesContext.isValidSecurityContext());
+    Assert.assertTrue(verifyAnputRequiredPermissionsContext.isValidSecurityContext());
   }
 }
