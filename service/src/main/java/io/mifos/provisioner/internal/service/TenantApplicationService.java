@@ -23,23 +23,26 @@ import io.mifos.anubis.config.TenantSignatureRepository;
 import io.mifos.core.cassandra.core.CassandraSessionProvider;
 import io.mifos.core.lang.AutoTenantContext;
 import io.mifos.core.lang.ServiceException;
+import io.mifos.provisioner.config.ProvisionerConstants;
+import io.mifos.provisioner.internal.listener.EventExpectation;
 import io.mifos.provisioner.internal.repository.ApplicationEntity;
 import io.mifos.provisioner.internal.repository.TenantApplicationEntity;
 import io.mifos.provisioner.internal.repository.TenantCassandraRepository;
 import io.mifos.provisioner.internal.repository.TenantEntity;
 import io.mifos.provisioner.internal.service.applications.AnubisInitializer;
 import io.mifos.provisioner.internal.service.applications.IdentityServiceInitializer;
+import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
 import javax.annotation.Nonnull;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Component
 public class TenantApplicationService {
@@ -49,19 +52,22 @@ public class TenantApplicationService {
   private final IdentityServiceInitializer identityServiceInitializer;
   private final TenantSignatureRepository tenantSignatureRepository;
   private final TenantCassandraRepository tenantCassandraRepository;
+  private final Logger logger;
 
   @Autowired
   public TenantApplicationService(final CassandraSessionProvider cassandraSessionProvider,
                                   final AnubisInitializer anubisInitializer,
                                   final IdentityServiceInitializer identityServiceInitializer,
                                   @SuppressWarnings("SpringJavaAutowiringInspection") final TenantSignatureRepository tenantSignatureRepository,
-                                  final TenantCassandraRepository tenantCassandraRepository) {
+                                  final TenantCassandraRepository tenantCassandraRepository,
+                                  @Qualifier(ProvisionerConstants.LOGGER_NAME) final Logger logger) {
     super();
     this.cassandraSessionProvider = cassandraSessionProvider;
     this.anubisInitializer = anubisInitializer;
     this.identityServiceInitializer = identityServiceInitializer;
     this.tenantSignatureRepository = tenantSignatureRepository;
     this.tenantCassandraRepository = tenantCassandraRepository;
+    this.logger = logger;
   }
 
   @Async
@@ -79,25 +85,58 @@ public class TenantApplicationService {
     final Set<ApplicationNameToUriPair> applicationNameToUriPairs =
             getApplicationNameToUriPairs(tenantApplicationEntity, appNameToUriMap);
 
-    getLatestIdentityManagerSignatureSet(tenantEntity)
-            .ifPresent(y -> initializeSecurity(tenantEntity, y, applicationNameToUriPairs));
+    final Optional<ApplicationSignatureSet> latestIdentityManagerSignatureSet = getLatestIdentityManagerSignatureSet(tenantEntity);
+    latestIdentityManagerSignatureSet.ifPresent(y -> {
+              try {
+                initializeSecurity(tenantEntity, y, applicationNameToUriPairs);
+              } catch (final InterruptedException e) {
+                logger.error("Because of interruption, started but didn't finish application assignment for {} in tenant {}.",
+                        appNameToUriMap.keySet(), tenantApplicationEntity.getTenantIdentifier(), e);
+              }
+            });
+    if (!latestIdentityManagerSignatureSet.isPresent()) {
+      logger.warn("No identity manager signature is available, so security is not initialized for applications {}",
+              appNameToUriMap.keySet());
+    }
   }
 
   private void initializeSecurity(final TenantEntity tenantEntity,
                                   final ApplicationSignatureSet identityManagerSignatureSet,
-                                  final Set<ApplicationNameToUriPair> applicationNameToUriPairs) {
+                                  final Set<ApplicationNameToUriPair> applicationNameToUriPairs) throws InterruptedException {
+    final String tenantIdentifier = tenantEntity.getIdentifier();
+    final String identityManagerApplicationName = tenantEntity.getIdentityManagerApplicationName();
+    final String identityManagerApplicationUri = tenantEntity.getIdentityManagerApplicationUri();
+
+    //Permittable groups must be posted before resource initialization occurs because resource initialization
+    //may request callback from another service. For example, Services X, Y, and Identity.
+    // X.initializeResources -> Y.requestCallback at X.address
+    // Y.requestCallback -> Identity.requestPermission to call X.address
+    // Therefore Identity must know of the permittable group for X.address before X.initializeResources is called.
+    final Stream<EventExpectation> eventExpectations = applicationNameToUriPairs.stream().flatMap(x ->
+            identityServiceInitializer.postApplicationPermittableGroups(
+                    tenantIdentifier,
+                    identityManagerApplicationName,
+                    identityManagerApplicationUri,
+                    x.uri).stream());
+    for (final EventExpectation eventExpectation : eventExpectations.collect(Collectors.toList())) {
+      if (!eventExpectation.waitForOccurrence(5, TimeUnit.SECONDS)) {
+        logger.warn("Expected action in identity didn't complete {}.", eventExpectation);
+      }
+    }
+
+
     applicationNameToUriPairs.forEach(x -> {
       final ApplicationSignatureSet applicationSignatureSet = anubisInitializer.initializeAnubis(
-              tenantEntity.getIdentifier(),
+              tenantIdentifier,
               x.name,
               x.uri,
               identityManagerSignatureSet.getTimestamp(),
               identityManagerSignatureSet.getIdentityManagerSignature());
 
       identityServiceInitializer.postApplicationDetails(
-              tenantEntity.getIdentifier(),
-              tenantEntity.getIdentityManagerApplicationName(),
-              tenantEntity.getIdentityManagerApplicationUri(),
+              tenantIdentifier,
+              identityManagerApplicationName,
+              identityManagerApplicationUri,
               x.name,
               x.uri,
               applicationSignatureSet);

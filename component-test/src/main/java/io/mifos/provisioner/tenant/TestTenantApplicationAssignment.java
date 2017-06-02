@@ -15,6 +15,7 @@
  */
 package io.mifos.provisioner.tenant;
 
+import com.google.gson.Gson;
 import io.mifos.anubis.api.v1.client.Anubis;
 import io.mifos.anubis.api.v1.domain.AllowedOperation;
 import io.mifos.anubis.api.v1.domain.ApplicationSignatureSet;
@@ -22,7 +23,6 @@ import io.mifos.anubis.api.v1.domain.PermittableEndpoint;
 import io.mifos.anubis.api.v1.domain.Signature;
 import io.mifos.anubis.provider.SystemRsaKeyProvider;
 import io.mifos.anubis.test.v1.SystemSecurityEnvironment;
-import io.mifos.anubis.token.TokenSerializationResult;
 import io.mifos.core.api.context.AutoSeshat;
 import io.mifos.core.api.util.ApiConstants;
 import io.mifos.core.api.util.ApiFactory;
@@ -33,14 +33,17 @@ import io.mifos.identity.api.v1.client.IdentityManager;
 import io.mifos.identity.api.v1.domain.CallEndpointSet;
 import io.mifos.identity.api.v1.domain.Permission;
 import io.mifos.identity.api.v1.domain.PermittableGroup;
+import io.mifos.identity.api.v1.events.ApplicationSignatureEvent;
 import io.mifos.permittedfeignclient.api.v1.client.ApplicationPermissionRequirements;
 import io.mifos.permittedfeignclient.api.v1.domain.ApplicationPermission;
 import io.mifos.provisioner.ProvisionerCassandraInitializer;
 import io.mifos.provisioner.ProvisionerMariaDBInitializer;
 import io.mifos.provisioner.api.v1.client.Provisioner;
 import io.mifos.provisioner.api.v1.domain.*;
+import io.mifos.provisioner.config.ProvisionerActiveMQProperties;
 import io.mifos.provisioner.config.ProvisionerConstants;
 import io.mifos.provisioner.config.ProvisionerServiceConfig;
+import io.mifos.provisioner.internal.listener.IdentityListener;
 import io.mifos.provisioner.internal.service.applications.ApplicationCallContextProvider;
 import io.mifos.provisioner.internal.util.TokenProvider;
 import org.junit.*;
@@ -66,7 +69,6 @@ import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.*;
@@ -75,7 +77,11 @@ import static org.mockito.Mockito.*;
  * @author Myrle Krantz
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT,
+        properties = {
+                ProvisionerActiveMQProperties.ACTIVEMQ_BROKER_URL_PROP + "=" + ProvisionerActiveMQProperties.ACTIVEMQ_BROKER_URL_DEFAULT,
+                ProvisionerActiveMQProperties.ACTIVEMQ_CONCURRENCY_PROP + "=" + ProvisionerActiveMQProperties.ACTIVEMQ_CONCURRENCY_DEFAULT}
+)
 public class TestTenantApplicationAssignment {
   private static final String APP_NAME = "provisioner-v1";
   private static final String CLIENT_ID = "sillyRabbit";
@@ -135,6 +141,12 @@ public class TestTenantApplicationAssignment {
   @Autowired
   protected SystemRsaKeyProvider systemRsaKeyProvider;
 
+  @Autowired
+  protected IdentityListener identityListener;
+
+  @Autowired
+  protected Gson gson;
+
   private AutoSeshat autoSeshat;
 
   public TestTenantApplicationAssignment() {
@@ -162,17 +174,6 @@ public class TestTenantApplicationAssignment {
     this.provisioner.deleteTenant(Fixture.getCompTestTenant().getIdentifier());
     Thread.sleep(500L);
     autoSeshat.close();
-  }
-
-  private static class TokenChecker implements Answer<TokenSerializationResult> {
-    TokenSerializationResult result = null;
-
-    @Override
-    public TokenSerializationResult answer(final InvocationOnMock invocation) throws Throwable {
-      result = (TokenSerializationResult) invocation.callRealMethod();
-      Assert.assertNotNull(result);
-      return result;
-    }
   }
 
   private class VerifyIsisInitializeContext implements Answer<ApplicationSignatureSet> {
@@ -209,6 +210,10 @@ public class TestTenantApplicationAssignment {
       ret.setIdentityManagerSignature(fakeSignature);
 
       return ret;
+    }
+
+    String getKeyTimestamp() {
+      return keyTimestamp;
     }
 
     boolean isValidSecurityContext() {
@@ -314,11 +319,101 @@ public class TestTenantApplicationAssignment {
     }
   }
 
+  private class VerifyIsisCreatePermittableGroup implements Answer<Void> {
+
+    private boolean validSecurityContext = true;
+    private final String tenantIdentifier;
+    private int callCount = 0;
+
+    private VerifyIsisCreatePermittableGroup(final String tenantIdentifier) {
+      this.tenantIdentifier = tenantIdentifier;
+    }
+
+    @Override
+    public Void answer(final InvocationOnMock invocation) throws Throwable {
+      final boolean validSecurityContextForThisCall = systemSecurityEnvironment.isValidSystemSecurityContext("identity", "1", tenantIdentifier);
+      validSecurityContext = validSecurityContext && validSecurityContextForThisCall;
+      callCount++;
+
+      final PermittableGroup arg = invocation.getArgumentAt(0, PermittableGroup.class);
+      identityListener.onCreatePermittableGroup(tenantIdentifier, arg.getIdentifier());
+      return null;
+    }
+
+    boolean isValidSecurityContext() {
+      return validSecurityContext;
+    }
+
+    int getCallCount() {
+      return callCount;
+    }
+  }
+
+  private class VerifyIsisSetApplicationSignature implements Answer<Void> {
+
+    private boolean validSecurityContext = false;
+    private final String tenantIdentifier;
+
+    private VerifyIsisSetApplicationSignature(final String tenantIdentifier) {
+      this.tenantIdentifier = tenantIdentifier;
+    }
+
+    @Override
+    public Void answer(final InvocationOnMock invocation) throws Throwable {
+      validSecurityContext = systemSecurityEnvironment.isValidSystemSecurityContext("identity", "1", tenantIdentifier);
+
+      final String applicationIdentifier = invocation.getArgumentAt(0, String.class);
+      final String keyTimestamp = invocation.getArgumentAt(1, String.class);
+      identityListener.onSetApplicationSignature(tenantIdentifier,
+              gson.toJson(new ApplicationSignatureEvent(applicationIdentifier, keyTimestamp)));
+      return null;
+    }
+
+    boolean isValidSecurityContext() {
+      return validSecurityContext;
+    }
+  }
+
+  private class VerifyIsisCreateApplicationPermission implements Answer<Void> {
+
+    private boolean validSecurityContext = true;
+    private final String tenantIdentifier;
+    private final String applicationIdentifier;
+    private int callCount = 0;
+
+    private VerifyIsisCreateApplicationPermission(final String tenantIdentifier, final String applicationIdentifier) {
+      this.tenantIdentifier = tenantIdentifier;
+      this.applicationIdentifier = applicationIdentifier;
+    }
+
+    @Override
+    public Void answer(final InvocationOnMock invocation) throws Throwable {
+      final boolean validSecurityContextForThisCall = systemSecurityEnvironment.isValidSystemSecurityContext("identity", "1", tenantIdentifier);
+      validSecurityContext = validSecurityContext && validSecurityContextForThisCall;
+      callCount++;
+
+      final String callApplicationIdentifier = invocation.getArgumentAt(0, String.class);
+      Assert.assertEquals(this.applicationIdentifier, callApplicationIdentifier);
+      return null;
+    }
+
+
+
+    boolean isValidSecurityContext() {
+      return validSecurityContext;
+    }
+
+    int getCallCount() {
+      return callCount;
+    }
+  }
+
   @Test
-  public void testTenantApplicationAssignment() throws InterruptedException {
+  public void testTenantApplicationAssignment() throws Exception {
     //Create io.mifos.provisioner.tenant
     final Tenant tenant = Fixture.getCompTestTenant();
     provisioner.createTenant(tenant);
+
 
 
     //Create identity service application
@@ -348,9 +443,6 @@ public class TestTenantApplicationAssignment {
     }
     doAnswer(verifyInitializeContextAndReturnSignature).when(identityServiceMock).initialize(anyString());
 
-    final TokenChecker tokenChecker = new TokenChecker();
-    doAnswer(tokenChecker).when(tokenProviderSpy).createToken(tenant.getIdentifier(), "identity-v1", 2L, TimeUnit.MINUTES);
-
     {
       final IdentityManagerInitialization identityServiceAdminInitialization
               = provisioner.assignIdentityManager(tenant.getIdentifier(), identityServiceAssigned);
@@ -359,9 +451,6 @@ public class TestTenantApplicationAssignment {
       Assert.assertNotNull(identityServiceAdminInitialization);
       Assert.assertNotNull(identityServiceAdminInitialization.getAdminPassword());
     }
-
-    verify(applicationCallContextProviderSpy, atMost(2)).getApplicationCallContext(tenant.getIdentifier(), "identity-v1");
-
 
     //Create horus application.
     final Application officeApp = new Application();
@@ -397,43 +486,47 @@ public class TestTenantApplicationAssignment {
     final VerifyCreateSignatureSetContext verifyCreateSignatureSetContext;
     final VerifyAnubisPermittablesContext verifyAnubisPermittablesContext;
     final VerifyAnputRequiredPermissionsContext verifyAnputRequiredPermissionsContext;
+    final VerifyIsisCreatePermittableGroup verifyIsisCreatePermittableGroup;
+    final VerifyIsisSetApplicationSignature verifyIsisSetApplicationSignature;
+    final VerifyIsisCreateApplicationPermission verifyIsisCreateApplicationPermission;
     try (final AutoTenantContext ignored = new AutoTenantContext(tenant.getIdentifier())) {
       verifyAnubisInitializeContext = new VerifyAnubisInitializeContext("office", tenant.getIdentifier());
       verifyCreateSignatureSetContext = new VerifyCreateSignatureSetContext(keysInApplicationSignature, "office", tenant.getIdentifier());
       verifyAnubisPermittablesContext = new VerifyAnubisPermittablesContext(Arrays.asList(xxPermittableEndpoint, xxPermittableEndpoint, xyPermittableEndpoint, xyGetPermittableEndpoint, mPermittableEndpoint), tenant.getIdentifier());
       verifyAnputRequiredPermissionsContext = new VerifyAnputRequiredPermissionsContext(Arrays.asList(forFooPermission, forBarPermission), tenant.getIdentifier());
+      verifyIsisCreatePermittableGroup = new VerifyIsisCreatePermittableGroup(tenant.getIdentifier());
+      verifyIsisSetApplicationSignature = new VerifyIsisSetApplicationSignature(tenant.getIdentifier());
+      verifyIsisCreateApplicationPermission = new VerifyIsisCreateApplicationPermission(tenant.getIdentifier(), "office-v1");
     }
     doAnswer(verifyAnubisInitializeContext).when(anubisMock).initializeResources();
     doAnswer(verifyCreateSignatureSetContext).when(anubisMock).createSignatureSet(anyString(), anyObject());
     doAnswer(verifyAnubisPermittablesContext).when(anubisMock).getPermittableEndpoints();
     doAnswer(verifyAnputRequiredPermissionsContext).when(anputMock).getRequiredPermissions();
-
+    doAnswer(verifyIsisCreatePermittableGroup).when(identityServiceMock).createPermittableGroup(new PermittableGroup("x", Arrays.asList(xxPermittableEndpoint, xyPermittableEndpoint, xyGetPermittableEndpoint)));
+    doAnswer(verifyIsisCreatePermittableGroup).when(identityServiceMock).createPermittableGroup(new PermittableGroup("m", Collections.singletonList(mPermittableEndpoint)));
+    doAnswer(verifyIsisSetApplicationSignature).when(identityServiceMock).setApplicationSignature(
+            "office-v1",
+            verifyInitializeContextAndReturnSignature.getKeyTimestamp(),
+            new Signature(keysInApplicationSignature.getPublicKeyMod(), keysInApplicationSignature.getPublicKeyExp()));
+    doAnswer(verifyIsisCreateApplicationPermission).when(identityServiceMock).createApplicationPermission("office-v1", new Permission("x", AllowedOperation.ALL));
+    doAnswer(verifyIsisCreateApplicationPermission).when(identityServiceMock).createApplicationPermission("office-v1", new Permission("m", Collections.singleton(AllowedOperation.READ)));
+    doAnswer(verifyIsisCreateApplicationPermission).when(identityServiceMock).createApplicationCallEndpointSet("office-v1", new CallEndpointSet("forPurposeFoo", Collections.singletonList("x")));
+    doAnswer(verifyIsisCreateApplicationPermission).when(identityServiceMock).createApplicationCallEndpointSet("office-v1", new CallEndpointSet("forPurposeBar", Collections.singletonList("m")));
 
     {
       provisioner.assignApplications(tenant.getIdentifier(), Collections.singletonList(officeAssigned));
+
       Thread.sleep(1500L); //Application assigning is asynchronous and I have no message queue.
-    }
-
-    verify(applicationCallContextProviderSpy).getApplicationCallContext(tenant.getIdentifier(), "office-v1");
-    verify(applicationCallContextProviderSpy, never()).getApplicationCallContext(eq(Fixture.TENANT_NAME), Mockito.anyString());
-    verify(tokenProviderSpy).createToken(tenant.getIdentifier(), "office-v1", 2L, TimeUnit.MINUTES);
-
-    try (final AutoTenantContext ignored = new AutoTenantContext(tenant.getIdentifier())) {
-      verify(identityServiceMock).setApplicationSignature(
-              "office-v1",
-              systemSecurityEnvironment.tenantKeyTimestamp(),
-              new Signature(keysInApplicationSignature.getPublicKeyMod(), keysInApplicationSignature.getPublicKeyExp()));
-      verify(identityServiceMock).createPermittableGroup(new PermittableGroup("x", Arrays.asList(xxPermittableEndpoint, xyPermittableEndpoint, xyGetPermittableEndpoint)));
-      verify(identityServiceMock).createPermittableGroup(new PermittableGroup("m", Collections.singletonList(mPermittableEndpoint)));
-      verify(identityServiceMock).createApplicationPermission("office-v1", new Permission("x", AllowedOperation.ALL));
-      verify(identityServiceMock).createApplicationPermission("office-v1", new Permission("m", Collections.singleton(AllowedOperation.READ)));
-      verify(identityServiceMock).createApplicationCallEndpointSet("office-v1", new CallEndpointSet("forPurposeFoo", Collections.singletonList("x")));
-      verify(identityServiceMock).createApplicationCallEndpointSet("office-v1", new CallEndpointSet("forPurposeBar", Collections.singletonList("m")));
     }
 
     Assert.assertTrue(verifyAnubisInitializeContext.isValidSecurityContext());
     Assert.assertTrue(verifyCreateSignatureSetContext.isValidSecurityContext());
     Assert.assertTrue(verifyAnubisPermittablesContext.isValidSecurityContext());
     Assert.assertTrue(verifyAnputRequiredPermissionsContext.isValidSecurityContext());
+    Assert.assertEquals(2, verifyIsisCreatePermittableGroup.getCallCount());
+    Assert.assertTrue(verifyIsisCreatePermittableGroup.isValidSecurityContext());
+    Assert.assertTrue(verifyIsisSetApplicationSignature.isValidSecurityContext());
+    Assert.assertEquals(4, verifyIsisCreateApplicationPermission.getCallCount());
+    Assert.assertTrue(verifyIsisCreateApplicationPermission.isValidSecurityContext());
   }
 }

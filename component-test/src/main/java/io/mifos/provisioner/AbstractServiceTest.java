@@ -17,6 +17,7 @@ package io.mifos.provisioner;
 
 import io.mifos.core.test.env.TestEnvironment;
 import io.mifos.provisioner.api.v1.client.Provisioner;
+import io.mifos.provisioner.config.ProvisionerActiveMQProperties;
 import io.mifos.provisioner.config.ProvisionerServiceConfig;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -36,7 +37,11 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT,
-        classes = {AbstractServiceTest.TestConfiguration.class})
+        classes = {AbstractServiceTest.TestConfiguration.class},
+        properties = {
+                ProvisionerActiveMQProperties.ACTIVEMQ_BROKER_URL_PROP + "=" + ProvisionerActiveMQProperties.ACTIVEMQ_BROKER_URL_DEFAULT,
+                ProvisionerActiveMQProperties.ACTIVEMQ_CONCURRENCY_PROP + "=" + ProvisionerActiveMQProperties.ACTIVEMQ_CONCURRENCY_DEFAULT}
+)
 public class AbstractServiceTest {
   private static final String APP_NAME = "provisioner-v1";
   private static final String CLIENT_ID = "sillyRabbit";

@@ -17,9 +17,11 @@ package io.mifos.provisioner.internal.service.applications;
 
 import io.mifos.anubis.api.v1.client.Anubis;
 import io.mifos.anubis.api.v1.domain.PermittableEndpoint;
+import io.mifos.core.lang.AutoTenantContext;
 import io.mifos.identity.api.v1.client.IdentityManager;
 import io.mifos.identity.api.v1.client.PermittableGroupAlreadyExistsException;
 import io.mifos.identity.api.v1.domain.PermittableGroup;
+import io.mifos.provisioner.internal.listener.IdentityListener;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -56,6 +58,7 @@ public class IdentityServiceInitializerTest {
 
   @Test
   public void getPermittablesAnubisCallFails() throws Exception {
+    final IdentityListener identityListenerMock = Mockito.mock(IdentityListener.class);
     final ApplicationCallContextProvider applicationCallContextProviderMock = Mockito.mock(ApplicationCallContextProvider.class);
     final Logger loggerMock = Mockito.mock(Logger.class);
     final Anubis anubisMock = Mockito.mock(Anubis.class);
@@ -64,7 +67,7 @@ public class IdentityServiceInitializerTest {
     //noinspection unchecked
     when(anubisMock.getPermittableEndpoints()).thenThrow(IllegalStateException.class);
 
-    final List<PermittableEndpoint> ret = new IdentityServiceInitializer(applicationCallContextProviderMock, null, loggerMock)
+    final List<PermittableEndpoint> ret = new IdentityServiceInitializer(identityListenerMock, applicationCallContextProviderMock, null, loggerMock)
             .getPermittables("blah");
 
     Assert.assertEquals(ret, Collections.emptyList());
@@ -89,39 +92,48 @@ public class IdentityServiceInitializerTest {
 
   @Test
   public void createOrFindPermittableGroupThatAlreadyExists() throws Exception {
+    final IdentityListener identityListenerMock = Mockito.mock(IdentityListener.class);
     final Logger loggerMock = Mockito.mock(Logger.class);
 
     final IdentityManager identityServiceMock = Mockito.mock(IdentityManager.class);
     doThrow(PermittableGroupAlreadyExistsException.class).when(identityServiceMock).createPermittableGroup(group1);
     doReturn(reorderedGroup1).when(identityServiceMock).getPermittableGroup(group1.getIdentifier());
 
-    new IdentityServiceInitializer(null, null, loggerMock).createOrFindPermittableGroup(identityServiceMock, group1);
+    try (final AutoTenantContext ignored = new AutoTenantContext("blah")) {
+      new IdentityServiceInitializer(identityListenerMock, null, null, loggerMock).createOrFindPermittableGroup(identityServiceMock, group1);
+    }
   }
 
   @Test
   public void createOrFindPermittableGroupThatAlreadyExistsDifferently() throws Exception {
+    final IdentityListener identityListenerMock = Mockito.mock(IdentityListener.class);
     final Logger loggerMock = Mockito.mock(Logger.class);
 
     final IdentityManager identityServiceMock = Mockito.mock(IdentityManager.class);
     doThrow(PermittableGroupAlreadyExistsException.class).when(identityServiceMock).createPermittableGroup(group1);
     doReturn(changedGroup1).when(identityServiceMock).getPermittableGroup(group1.getIdentifier());
 
-    new IdentityServiceInitializer(null, null, loggerMock).createOrFindPermittableGroup(identityServiceMock, group1);
+    try (final AutoTenantContext ignored = new AutoTenantContext("blah")) {
+      new IdentityServiceInitializer(identityListenerMock, null, null, loggerMock).createOrFindPermittableGroup(identityServiceMock, group1);
+    }
 
-    verify(loggerMock).error(anyString(), anyString());
+    verify(loggerMock).error(anyString(), anyString(), anyString());
   }
 
   @Test
   public void createOrFindPermittableGroupWhenIsisCallFails() throws Exception {
+    final IdentityListener identityListenerMock = Mockito.mock(IdentityListener.class);
     final Logger loggerMock = Mockito.mock(Logger.class);
 
     final IdentityManager identityServiceMock = Mockito.mock(IdentityManager.class);
     doThrow(IllegalStateException.class).when(identityServiceMock).createPermittableGroup(group1);
     doReturn(changedGroup1).when(identityServiceMock).getPermittableGroup(group1.getIdentifier());
 
-    new IdentityServiceInitializer(null, null, loggerMock).createOrFindPermittableGroup(identityServiceMock, group1);
+    try (final AutoTenantContext ignored = new AutoTenantContext("blah")) {
+      new IdentityServiceInitializer(identityListenerMock, null, null, loggerMock).createOrFindPermittableGroup(identityServiceMock, group1);
+    }
 
-    verify(loggerMock).error(anyString(), anyString(), isA(IllegalStateException.class));
+    verify(loggerMock).error(anyString(), anyString(), anyString(), isA(IllegalStateException.class));
   }
 
 
