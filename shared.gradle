@@ -12,6 +12,8 @@ ext.versions = [
         frameworkmariadb     : '0.1.0-BUILD-SNAPSHOT',
         frameworkcrypto      : '0.1.0-BUILD-SNAPSHOT',
         frameworktest        : '0.1.0-BUILD-SNAPSHOT',
+        springcontext        : '4.3.3.RELEASE',
+        activeMQ             : '5.13.2',
         validator            : '5.3.0.Final'
 ]
 

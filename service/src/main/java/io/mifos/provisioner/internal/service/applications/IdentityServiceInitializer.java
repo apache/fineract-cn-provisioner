@@ -30,6 +30,8 @@ import io.mifos.identity.api.v1.domain.PermittableGroup;
 import io.mifos.permittedfeignclient.api.v1.client.ApplicationPermissionRequirements;
 import io.mifos.permittedfeignclient.api.v1.domain.ApplicationPermission;
 import io.mifos.provisioner.config.ProvisionerConstants;
+import io.mifos.provisioner.internal.listener.EventExpectation;
+import io.mifos.provisioner.internal.listener.IdentityListener;
 import io.mifos.tool.crypto.HashGenerator;
 import org.apache.commons.lang.RandomStringUtils;
 import org.slf4j.Logger;
@@ -41,6 +43,7 @@ import org.springframework.util.Base64Utils;
 
 import javax.annotation.Nonnull;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -49,7 +52,7 @@ import java.util.stream.Stream;
  */
 @Component
 public class IdentityServiceInitializer {
-
+  private final IdentityListener identityListener;
   private final ApplicationCallContextProvider applicationCallContextProvider;
   private final HashGenerator hashGenerator;
   private final Logger logger;
@@ -83,9 +86,11 @@ public class IdentityServiceInitializer {
 
   @Autowired
   public IdentityServiceInitializer(
+          final IdentityListener identityListener,
           final ApplicationCallContextProvider applicationCallContextProvider,
           final HashGenerator hashGenerator,
           @Qualifier(ProvisionerConstants.LOGGER_NAME) final Logger logger) {
+    this.identityListener = identityListener;
     this.applicationCallContextProvider = applicationCallContextProvider;
     this.hashGenerator = hashGenerator;
     this.logger = logger;
@@ -128,19 +133,44 @@ public class IdentityServiceInitializer {
     }
   }
 
+  public List<EventExpectation> postApplicationPermittableGroups(
+          final @Nonnull String tenantIdentifier,
+          final @Nonnull String identityManagerApplicationName,
+          final @Nonnull String identityManagerApplicationUri,
+          final @Nonnull String applicationUri) {
+    final List<PermittableEndpoint> permittables;
+    try (final AutoCloseable ignored = applicationCallContextProvider.getApplicationCallGuestContext(tenantIdentifier)) {
+      permittables = getPermittables(applicationUri);
+    } catch (final Exception e) {
+      throw new IllegalStateException(e);
+    }
+
+    try (final AutoCloseable ignored
+                 = applicationCallContextProvider.getApplicationCallContext(tenantIdentifier, identityManagerApplicationName)) {
+      final IdentityManager identityService = applicationCallContextProvider.getApplication(IdentityManager.class, identityManagerApplicationUri);
+
+      final Stream<PermittableGroup> permittableGroups = getPermittableGroups(permittables);
+      //You might look at this and wonder: "Why isn't she returning a stream here? She's just turning it back into
+      //a stream on the other side..."
+      //The answer is that you need the createOrFindPermittableGroup to be executed in the proper tenant context. If you
+      //return the stream, the call to createOrFindPermittableGroup will be executed when the stream is itereated over.
+      return permittableGroups.map(x -> createOrFindPermittableGroup(identityService, x)).collect(Collectors.toList());
+    } catch (final Exception e) {
+      throw new IllegalStateException(e);
+    }
+  }
+
   public void postApplicationDetails(
           final @Nonnull String tenantIdentifier,
           final @Nonnull String identityManagerApplicationName,
           final @Nonnull String identityManagerApplicationUri,
           final @Nonnull String applicationName,
           final @Nonnull String applicationUri,
-          final @Nonnull ApplicationSignatureSet applicationSignatureSet)
-  {
-    final List<PermittableEndpoint> permittables;
+          final @Nonnull ApplicationSignatureSet applicationSignatureSet) {
     final List<ApplicationPermission> applicationPermissionRequirements;
     try (final AutoCloseable ignored = applicationCallContextProvider.getApplicationCallGuestContext(tenantIdentifier)) {
-      permittables = getPermittables(applicationUri);
       applicationPermissionRequirements = getApplicationPermissionRequirements(applicationName, applicationUri);
+      logger.info("Application permission requirements for {} contain {}.", applicationName, applicationPermissionRequirements);
 
     } catch (final Exception e) {
       throw new IllegalStateException(e);
@@ -150,11 +180,11 @@ public class IdentityServiceInitializer {
                  = applicationCallContextProvider.getApplicationCallContext(tenantIdentifier, identityManagerApplicationName))
     {
       final IdentityManager identityService = applicationCallContextProvider.getApplication(IdentityManager.class, identityManagerApplicationUri);
+      final EventExpectation eventExpectation = identityListener.expectApplicationSignatureSet(tenantIdentifier, applicationName, applicationSignatureSet.getTimestamp());
       identityService.setApplicationSignature(applicationName, applicationSignatureSet.getTimestamp(), applicationSignatureSet.getApplicationSignature());
-      //TODO: I need to know when this is done.  ActiveMQ.  sigh.
-
-      final Stream<PermittableGroup> permittableGroups = getPermittableGroups(permittables);
-      permittableGroups.forEach(x -> createOrFindPermittableGroup(identityService, x));
+      if (!eventExpectation.waitForOccurrence(5, TimeUnit.SECONDS)) {
+        logger.warn("Expected action in identity didn't complete {}.", eventExpectation);
+      }
 
       applicationPermissionRequirements.forEach(x -> createOrFindApplicationPermission(identityService, applicationName, x));
 
@@ -218,32 +248,37 @@ public class IdentityServiceInitializer {
     });
   }
 
-  void createOrFindPermittableGroup(
+  EventExpectation createOrFindPermittableGroup(
           final @Nonnull IdentityManager identityService,
           final @Nonnull PermittableGroup permittableGroup) {
+    final EventExpectation eventExpectation = identityListener.expectPermittableGroupCreation(TenantContextHolder.checkedGetIdentifier(), permittableGroup.getIdentifier());
     try {
       identityService.createPermittableGroup(permittableGroup);
-      logger.info("Group '{}' successfully created in identity service for tenant {}.", permittableGroup.getIdentifier(), TenantContextHolder.checkedGetIdentifier());
+      logger.info("Group '{}' creation successfully requested in identity service for tenant {}.", permittableGroup.getIdentifier(), TenantContextHolder.checkedGetIdentifier());
     }
     catch (final PermittableGroupAlreadyExistsException groupAlreadyExistsException)
     {
       //if the group already exists, read out and compare.  If the group is the same, there is nothing left to do.
       final PermittableGroup existingGroup = identityService.getPermittableGroup(permittableGroup.getIdentifier());
       if (!existingGroup.getIdentifier().equals(permittableGroup.getIdentifier())) {
-        logger.error("Group '{}' already exists, but has a different name {} (strange).", permittableGroup.getIdentifier(), existingGroup.getIdentifier());
+        logger.error("Group '{}' already exists for tenant {}, but has a different name {} (strange).", permittableGroup.getIdentifier(), TenantContextHolder.checkedGetIdentifier(), existingGroup.getIdentifier());
+        identityListener.withdrawExpectation(eventExpectation);
       }
 
       //Compare as sets because I'm not going to get into a hissy fit over order.
       final Set<PermittableEndpoint> existingGroupPermittables = new HashSet<>(existingGroup.getPermittables());
       final Set<PermittableEndpoint> newGroupPermittables = new HashSet<>(permittableGroup.getPermittables());
       if (!existingGroupPermittables.equals(newGroupPermittables)) {
-        logger.error("Group '{}' already exists, but has different contents.", permittableGroup.getIdentifier());
+        logger.error("Group '{}' already exists for tenant {}, but has different contents.", permittableGroup.getIdentifier(), TenantContextHolder.checkedGetIdentifier());
+        identityListener.withdrawExpectation(eventExpectation);
       }
     }
     catch (final RuntimeException unexpected)
     {
-      logger.error("Creating group '{}' failed.", permittableGroup.getIdentifier(), unexpected);
+      logger.error("Creating group '{}' for tenant {} failed.", permittableGroup.getIdentifier(), TenantContextHolder.checkedGetIdentifier(), unexpected);
+      identityListener.withdrawExpectation(eventExpectation);
     }
+    return eventExpectation;
   }
 
   private void createOrFindApplicationPermission(
@@ -252,6 +287,8 @@ public class IdentityServiceInitializer {
           final @Nonnull ApplicationPermission applicationPermission) {
     try {
       identityService.createApplicationPermission(applicationName, applicationPermission.getPermission());
+      logger.info("Application permission '{}.{}' created.",
+              applicationName, applicationPermission.getPermission().getPermittableEndpointGroupIdentifier());
     }
     catch (final ApplicationPermissionAlreadyExistsException alreadyExistsException)
     {

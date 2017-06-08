@@ -110,7 +110,7 @@ public class TenantCassandraRepository {
                       tenant.getReplicas()));
     }
     catch (final AlreadyExistsException e) {
-      throw ServiceException.conflict("Tenant {0} already exists!", tenant.getIdentifier());
+      throw ServiceException.badRequest("Tenant keyspace {0} already exists!", tenant.getKeyspaceName());
     }
 
     final String createCommandSourceTable =

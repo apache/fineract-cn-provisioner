@@ -29,6 +29,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.List;
+
 public class TestTenants extends AbstractServiceTest {
 
   public TestTenants() {
@@ -47,7 +49,7 @@ public class TestTenants extends AbstractServiceTest {
 
   @After
   public void after() throws InterruptedException {
-    provisioner.deleteTenant(Fixture.getCompTestTenant().getIdentifier());
+    //provisioner.deleteTenant(Fixture.getCompTestTenant().getIdentifier());
     autoSeshat.close();
   }
 
@@ -68,8 +70,9 @@ public class TestTenants extends AbstractServiceTest {
 
   @Test(expected = DuplicateIdentifierException.class)
   public void shouldFailCreateDuplicate() {
-    provisioner.createTenant(Fixture.getCompTestTenant());
-    provisioner.createTenant(Fixture.getCompTestTenant());
+    final Tenant tenant = Fixture.getCompTestTenant();
+    provisioner.createTenant(tenant);
+    provisioner.createTenant(tenant);
   }
 
   @Test
@@ -88,7 +91,10 @@ public class TestTenants extends AbstractServiceTest {
 
   @Test
   public void shouldFetchAll() {
-    provisioner.createTenant(Fixture.getCompTestTenant());
-    Assert.assertFalse(provisioner.getTenants().isEmpty());
+    final Tenant tenant = Fixture.getCompTestTenant();
+    provisioner.createTenant(tenant);
+    final List<Tenant> tenants = provisioner.getTenants();
+    Assert.assertFalse(tenants.isEmpty());
+    Assert.assertTrue(tenants.contains(tenant));
   }
 }
