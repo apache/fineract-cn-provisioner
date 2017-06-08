@@ -126,12 +126,7 @@ public class TenantApplicationService {
 
 
     applicationNameToUriPairs.forEach(x -> {
-      final ApplicationSignatureSet applicationSignatureSet = anubisInitializer.initializeAnubis(
-              tenantIdentifier,
-              x.name,
-              x.uri,
-              identityManagerSignatureSet.getTimestamp(),
-              identityManagerSignatureSet.getIdentityManagerSignature());
+      final ApplicationSignatureSet applicationSignatureSet = anubisInitializer.createSignatureSet(tenantIdentifier, x.name, x.uri, identityManagerSignatureSet.getTimestamp(), identityManagerSignatureSet.getIdentityManagerSignature());
 
       identityServiceInitializer.postApplicationDetails(
               tenantIdentifier,
@@ -140,6 +135,11 @@ public class TenantApplicationService {
               x.name,
               x.uri,
               applicationSignatureSet);
+
+      //InitializeResources on the service being added should occur last, for two reasons:
+      // 1.) When the initialization event is put on the queue for this app/tenant combo, the app is fully ready for business.
+      // 2.) If the app depeneds on the provisioning of identitypermissions in its initialization, those resources will be there.
+      anubisInitializer.initializeResources(tenantIdentifier, x.name, x.uri);
     });
   }
 

@@ -42,18 +42,27 @@ public class AnubisInitializer {
     this.logger = logger;
   }
 
-  public ApplicationSignatureSet initializeAnubis(final @Nonnull String tenantIdentifier,
-                                                  final @Nonnull String applicationName,
-                                                  final @Nonnull String uri,
-                                                  final @Nonnull String keyTimestamp,
-                                                  final @Nonnull Signature signature) {
+  public void initializeResources(@Nonnull String tenantIdentifier, @Nonnull String applicationName, @Nonnull String uri) {
+    try (final AutoCloseable ignored
+                  = this.applicationCallContextProvider.getApplicationCallContext(tenantIdentifier, applicationName))
+    {
+      final Anubis anubis = this.applicationCallContextProvider.getApplication(Anubis.class, uri);
+      anubis.initializeResources();
+      logger.info("Anubis initializeResources for tenant '{}' and application '{}' succeeded.",
+              tenantIdentifier, applicationName);
+
+    } catch (final Exception e) {
+      throw new IllegalStateException(e);
+    }
+  }
+
+  public ApplicationSignatureSet createSignatureSet(@Nonnull String tenantIdentifier, @Nonnull String applicationName, @Nonnull String uri, @Nonnull String keyTimestamp, @Nonnull Signature signature) {
     try (final AutoCloseable ignored
                  = this.applicationCallContextProvider.getApplicationCallContext(tenantIdentifier, applicationName))
     {
       final Anubis anubis = this.applicationCallContextProvider.getApplication(Anubis.class, uri);
-      anubis.initializeResources();
       final ApplicationSignatureSet applicationSignatureSet = anubis.createSignatureSet(keyTimestamp, signature);
-      logger.info("Anubis initialization for io.mifos.provisioner.tenant '{}' and application '{}' succeeded with signature set '{}'.",
+      logger.info("Anubis createSignatureSet for tenant '{}' and application '{}' succeeded with signature set '{}'.",
               tenantIdentifier, applicationName, applicationSignatureSet);
       return applicationSignatureSet;
 

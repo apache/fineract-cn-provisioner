@@ -170,6 +170,7 @@ public class IdentityServiceInitializer {
     final List<ApplicationPermission> applicationPermissionRequirements;
     try (final AutoCloseable ignored = applicationCallContextProvider.getApplicationCallGuestContext(tenantIdentifier)) {
       applicationPermissionRequirements = getApplicationPermissionRequirements(applicationName, applicationUri);
+      logger.info("Application permission requirements for {} contain {}.", applicationName, applicationPermissionRequirements);
 
     } catch (final Exception e) {
       throw new IllegalStateException(e);
@@ -286,6 +287,8 @@ public class IdentityServiceInitializer {
           final @Nonnull ApplicationPermission applicationPermission) {
     try {
       identityService.createApplicationPermission(applicationName, applicationPermission.getPermission());
+      logger.info("Application permission '{}.{}' created.",
+              applicationName, applicationPermission.getPermission().getPermittableEndpointGroupIdentifier());
     }
     catch (final ApplicationPermissionAlreadyExistsException alreadyExistsException)
     {
