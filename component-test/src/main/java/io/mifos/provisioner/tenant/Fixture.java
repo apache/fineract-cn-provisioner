@@ -22,26 +22,24 @@ import io.mifos.provisioner.api.v1.domain.DatabaseConnectionInfo;
 import io.mifos.provisioner.api.v1.domain.Tenant;
 
 class Fixture {
-  static final String TENANT_NAME = "Comp Test";
-
   static Tenant getCompTestTenant() {
     final Tenant compTestTenant = new Tenant();
     compTestTenant.setIdentifier(TestEnvironment.getRandomTenantName());
-    compTestTenant.setName(TENANT_NAME);
+    compTestTenant.setName("Comp Test");
     compTestTenant.setDescription("Component Test Tenant");
 
     final CassandraConnectionInfo cassandraConnectionInfo = new CassandraConnectionInfo();
     compTestTenant.setCassandraConnectionInfo(cassandraConnectionInfo);
     cassandraConnectionInfo.setClusterName("Test Cluster");
     cassandraConnectionInfo.setContactPoints("127.0.0.1:9142");
-    cassandraConnectionInfo.setKeyspace("comp_test");
+    cassandraConnectionInfo.setKeyspace(compTestTenant.getIdentifier());
     cassandraConnectionInfo.setReplicas("3");
     cassandraConnectionInfo.setReplicationType("Simple");
 
     final DatabaseConnectionInfo databaseConnectionInfo = new DatabaseConnectionInfo();
     compTestTenant.setDatabaseConnectionInfo(databaseConnectionInfo);
     databaseConnectionInfo.setDriverClass("org.mariadb.jdbc.Driver");
-    databaseConnectionInfo.setDatabaseName("comp_test");
+    databaseConnectionInfo.setDatabaseName(compTestTenant.getIdentifier());
     databaseConnectionInfo.setHost("localhost");
     databaseConnectionInfo.setPort("3306");
     databaseConnectionInfo.setUser("root");
