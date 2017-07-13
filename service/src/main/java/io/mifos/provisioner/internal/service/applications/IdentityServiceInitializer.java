@@ -70,11 +70,6 @@ public class IdentityServiceInitializer {
       this.adminPassword = Optional.of(adminPassword);
     }
 
-    private IdentityServiceInitializationResult(final ApplicationSignatureSet signatureSet) {
-      this.signatureSet = signatureSet;
-      this.adminPassword = Optional.empty();
-    }
-
     public ApplicationSignatureSet getSignatureSet() {
       return signatureSet;
     }
@@ -103,28 +98,20 @@ public class IdentityServiceInitializer {
     try (final AutoCloseable ignored
                  = applicationCallContextProvider.getApplicationCallContext(tenantIdentifier, applicationName)) {
       final IdentityManager identityService = applicationCallContextProvider.getApplication(IdentityManager.class, identityManagerUri);
-      try {
-        final String randomPassword = RandomStringUtils.random(8, true, true);
-        this.logger.debug("Generated password for tenant super user '{}' is '{}'.", tenantIdentifier, randomPassword);
+      final String randomPassword = RandomStringUtils.random(8, true, true);
+      this.logger.debug("Generated password for tenant super user '{}' is '{}'.", tenantIdentifier, randomPassword);
 
-        final byte[] salt = Base64Utils.encode(("antony" + tenantIdentifier + this.domain).getBytes());
+      final byte[] salt = Base64Utils.encode(("antony" + tenantIdentifier + this.domain).getBytes());
 
-        final String encodedPassword = Base64Utils.encodeToString(randomPassword.getBytes());
+      final String encodedPassword = Base64Utils.encodeToString(randomPassword.getBytes());
 
-        final byte[] hash = this.hashGenerator.hash(encodedPassword, salt, ProvisionerConstants.ITERATION_COUNT, ProvisionerConstants.HASH_LENGTH);
-        final String encodedPasswordHash = Base64Utils.encodeToString(hash);
+      final byte[] hash = this.hashGenerator.hash(encodedPassword, salt, ProvisionerConstants.ITERATION_COUNT, ProvisionerConstants.HASH_LENGTH);
+      final String encodedPasswordHash = Base64Utils.encodeToString(hash);
 
-        final ApplicationSignatureSet signatureSet = identityService.initialize(encodedPasswordHash);
-        logger.info("Isis initialization for io.mifos.provisioner.tenant '{}' succeeded with signature set '{}'.", tenantIdentifier, signatureSet);
+      final ApplicationSignatureSet signatureSet = identityService.initialize(encodedPasswordHash);
+      logger.info("Isis initialization for io.mifos.provisioner.tenant '{}' succeeded with signature set '{}'.", tenantIdentifier, signatureSet);
 
-        return new IdentityServiceInitializationResult(signatureSet, encodedPasswordHash);
-      } catch (final TenantAlreadyInitializedException aiex) {
-        final ApplicationSignatureSet signatureSet = identityService.getLatestSignatureSet();
-        logger.info("Isis initialization for io.mifos.provisioner.tenant '{}' failed because it was already initialized.  Pre-existing signature set '{}'.",
-                tenantIdentifier, signatureSet);
-
-        return new IdentityServiceInitializationResult(signatureSet);
-      }
+      return new IdentityServiceInitializationResult(signatureSet, encodedPasswordHash);
     } catch (final InvalidTokenException e) {
       throw ServiceException.conflict("The given identity instance didn't recognize the system token as valid.  " +
               "Perhaps the system keys for the provisioner or for the identity manager are misconfigured?");
@@ -230,7 +217,7 @@ public class IdentityServiceInitializer {
     permittables.forEach(x -> groupedPermittables.computeIfAbsent(x.getGroupId(), y -> new LinkedHashSet<>()).add(x));
 
     return groupedPermittables.entrySet().stream()
-            .map(entry -> new PermittableGroup(entry.getKey(), entry.getValue().stream().collect(Collectors.toList())));
+            .map(entry -> new PermittableGroup(entry.getKey(), new ArrayList<PermittableEndpoint>(entry.getValue())));
   }
 
   private static Stream<CallEndpointSet> getCallEndpointSets(
