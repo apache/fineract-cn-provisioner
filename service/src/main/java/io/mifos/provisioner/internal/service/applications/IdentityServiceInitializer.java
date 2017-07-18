@@ -23,7 +23,10 @@ import io.mifos.anubis.api.v1.domain.PermittableEndpoint;
 import io.mifos.core.api.util.InvalidTokenException;
 import io.mifos.core.lang.ServiceException;
 import io.mifos.core.lang.TenantContextHolder;
-import io.mifos.identity.api.v1.client.*;
+import io.mifos.identity.api.v1.client.ApplicationPermissionAlreadyExistsException;
+import io.mifos.identity.api.v1.client.CallEndpointSetAlreadyExistsException;
+import io.mifos.identity.api.v1.client.IdentityManager;
+import io.mifos.identity.api.v1.client.PermittableGroupAlreadyExistsException;
 import io.mifos.identity.api.v1.domain.CallEndpointSet;
 import io.mifos.identity.api.v1.domain.Permission;
 import io.mifos.identity.api.v1.domain.PermittableGroup;
@@ -33,7 +36,6 @@ import io.mifos.provisioner.config.ProvisionerConstants;
 import io.mifos.provisioner.internal.listener.EventExpectation;
 import io.mifos.provisioner.internal.listener.IdentityListener;
 import io.mifos.tool.crypto.HashGenerator;
-import org.apache.commons.lang.RandomStringUtils;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -98,12 +100,17 @@ public class IdentityServiceInitializer {
     try (final AutoCloseable ignored
                  = applicationCallContextProvider.getApplicationCallContext(tenantIdentifier, applicationName)) {
       final IdentityManager identityService = applicationCallContextProvider.getApplication(IdentityManager.class, identityManagerUri);
-      final String randomPassword = RandomStringUtils.random(8, true, true);
-      this.logger.debug("Generated password for tenant super user '{}' is '{}'.", tenantIdentifier, randomPassword);
+      // When running behind a gateway, calls to provisioner can be repeated multiple times.  This leads
+      // to repeated regeneration of the password, when only one password is returned.  As a result the
+      // real password gets replaced with a wrong one with a high probability.  Provisioning scripts then
+      // fail when they try to log in to identity for further provisioning. For this reason, return a
+      // constant password, and change it immediately in the provisioning script.
+      final String nonRandomPassword = "ChangeThisPassword";
+      this.logger.debug("Initial password for tenant super user '{}' is '{}'. This should be changed immediately.", tenantIdentifier, nonRandomPassword);
 
       final byte[] salt = Base64Utils.encode(("antony" + tenantIdentifier + this.domain).getBytes());
 
-      final String encodedPassword = Base64Utils.encodeToString(randomPassword.getBytes());
+      final String encodedPassword = Base64Utils.encodeToString(nonRandomPassword.getBytes());
 
       final byte[] hash = this.hashGenerator.hash(encodedPassword, salt, ProvisionerConstants.ITERATION_COUNT, ProvisionerConstants.HASH_LENGTH);
       final String encodedPasswordHash = Base64Utils.encodeToString(hash);
