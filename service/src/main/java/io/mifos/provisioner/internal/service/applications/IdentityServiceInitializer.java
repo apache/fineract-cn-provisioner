@@ -120,9 +120,11 @@ public class IdentityServiceInitializer {
 
       return new IdentityServiceInitializationResult(signatureSet, encodedPasswordHash);
     } catch (final InvalidTokenException e) {
+      logger.warn("The given identity instance didn't recognize the system token as valid.", e);
       throw ServiceException.conflict("The given identity instance didn't recognize the system token as valid.  " +
               "Perhaps the system keys for the provisioner or for the identity manager are misconfigured?");
     } catch (final Exception e) {
+      logger.error("An unexpected error occured while initializing identity.", e);
       throw new IllegalStateException(e);
     }
   }

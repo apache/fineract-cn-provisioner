@@ -238,6 +238,7 @@ public class ProvisionerRestController {
   ResponseEntity<IdentityManagerInitialization> assignIdentityManager(@PathVariable("tenantidentifier") final String tenantIdentifier,
                                              @RequestBody final AssignedApplication assignedApplication)
   {
+    logger.info("Assigning identity manager for tenant '{}'.", tenantIdentifier);
     final String identityManagerUri = applicationService.find(assignedApplication.getName()).getHomepage();
 
     final Optional<String> adminPassword = tenantService.assignIdentityManager(
