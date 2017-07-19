@@ -21,6 +21,7 @@ import io.mifos.core.lang.AutoTenantContext;
 import io.mifos.identity.api.v1.client.IdentityManager;
 import io.mifos.identity.api.v1.client.PermittableGroupAlreadyExistsException;
 import io.mifos.identity.api.v1.domain.PermittableGroup;
+import io.mifos.provisioner.config.SystemProperties;
 import io.mifos.provisioner.internal.listener.IdentityListener;
 import org.junit.Assert;
 import org.junit.Test;
@@ -67,7 +68,8 @@ public class IdentityServiceInitializerTest {
     //noinspection unchecked
     when(anubisMock.getPermittableEndpoints()).thenThrow(IllegalStateException.class);
 
-    final List<PermittableEndpoint> ret = new IdentityServiceInitializer(identityListenerMock, applicationCallContextProviderMock, null, loggerMock)
+    final SystemProperties systemProperties = new SystemProperties();
+    final List<PermittableEndpoint> ret = new IdentityServiceInitializer(identityListenerMock, applicationCallContextProviderMock, null, loggerMock, systemProperties)
             .getPermittables("blah");
 
     Assert.assertEquals(ret, Collections.emptyList());
@@ -100,7 +102,8 @@ public class IdentityServiceInitializerTest {
     doReturn(reorderedGroup1).when(identityServiceMock).getPermittableGroup(group1.getIdentifier());
 
     try (final AutoTenantContext ignored = new AutoTenantContext("blah")) {
-      new IdentityServiceInitializer(identityListenerMock, null, null, loggerMock).createOrFindPermittableGroup(identityServiceMock, group1);
+      final SystemProperties systemProperties = new SystemProperties();
+      new IdentityServiceInitializer(identityListenerMock, null, null, loggerMock, systemProperties).createOrFindPermittableGroup(identityServiceMock, group1);
     }
   }
 
@@ -114,7 +117,8 @@ public class IdentityServiceInitializerTest {
     doReturn(changedGroup1).when(identityServiceMock).getPermittableGroup(group1.getIdentifier());
 
     try (final AutoTenantContext ignored = new AutoTenantContext("blah")) {
-      new IdentityServiceInitializer(identityListenerMock, null, null, loggerMock).createOrFindPermittableGroup(identityServiceMock, group1);
+      final SystemProperties systemProperties = new SystemProperties();
+      new IdentityServiceInitializer(identityListenerMock, null, null, loggerMock, systemProperties).createOrFindPermittableGroup(identityServiceMock, group1);
     }
 
     verify(loggerMock).error(anyString(), anyString(), anyString());
@@ -130,7 +134,8 @@ public class IdentityServiceInitializerTest {
     doReturn(changedGroup1).when(identityServiceMock).getPermittableGroup(group1.getIdentifier());
 
     try (final AutoTenantContext ignored = new AutoTenantContext("blah")) {
-      new IdentityServiceInitializer(identityListenerMock, null, null, loggerMock).createOrFindPermittableGroup(identityServiceMock, group1);
+      final SystemProperties systemProperties = new SystemProperties();
+      new IdentityServiceInitializer(identityListenerMock, null, null, loggerMock, systemProperties).createOrFindPermittableGroup(identityServiceMock, group1);
     }
 
     verify(loggerMock).error(anyString(), anyString(), anyString(), isA(IllegalStateException.class));

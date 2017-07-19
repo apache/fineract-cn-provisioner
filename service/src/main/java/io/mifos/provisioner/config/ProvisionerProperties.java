@@ -13,14 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.mifos.provisioner.internal.util;
+package io.mifos.provisioner.config;
 
-public enum DataStoreOption {
-  ALL,
-  CASSANDRA,
-  RDBMS;
+import io.mifos.provisioner.internal.util.DataStoreOption;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 
-  public boolean isEnabled(final DataStoreOption dataStoreOption) {
-    return this == ALL || this == dataStoreOption;
+import javax.validation.Valid;
+
+/**
+ * @author Myrle Krantz
+ */
+@ConfigurationProperties(prefix = "provisioner")
+public class ProvisionerProperties {
+  @Valid
+  private DataStoreOption dataStoreOption = DataStoreOption.ALL;
+
+  public DataStoreOption getDataStoreOption() {
+    return dataStoreOption;
+  }
+
+  public void setDataStoreOption(DataStoreOption dataStoreOption) {
+    this.dataStoreOption = dataStoreOption;
   }
 }

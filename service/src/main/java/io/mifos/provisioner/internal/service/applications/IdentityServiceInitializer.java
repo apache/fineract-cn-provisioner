@@ -33,13 +33,13 @@ import io.mifos.identity.api.v1.domain.PermittableGroup;
 import io.mifos.permittedfeignclient.api.v1.client.ApplicationPermissionRequirements;
 import io.mifos.permittedfeignclient.api.v1.domain.ApplicationPermission;
 import io.mifos.provisioner.config.ProvisionerConstants;
+import io.mifos.provisioner.config.SystemProperties;
 import io.mifos.provisioner.internal.listener.EventExpectation;
 import io.mifos.provisioner.internal.listener.IdentityListener;
 import io.mifos.tool.crypto.HashGenerator;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Base64Utils;
 
@@ -58,9 +58,7 @@ public class IdentityServiceInitializer {
   private final ApplicationCallContextProvider applicationCallContextProvider;
   private final HashGenerator hashGenerator;
   private final Logger logger;
-
-  @Value("${system.domain}")
-  private String domain;
+  private final SystemProperties systemProperties;
 
   public class IdentityServiceInitializationResult {
     private final ApplicationSignatureSet signatureSet;
@@ -83,14 +81,16 @@ public class IdentityServiceInitializer {
 
   @Autowired
   public IdentityServiceInitializer(
-          final IdentityListener identityListener,
-          final ApplicationCallContextProvider applicationCallContextProvider,
-          final HashGenerator hashGenerator,
-          @Qualifier(ProvisionerConstants.LOGGER_NAME) final Logger logger) {
+      final IdentityListener identityListener,
+      final ApplicationCallContextProvider applicationCallContextProvider,
+      final HashGenerator hashGenerator,
+      @Qualifier(ProvisionerConstants.LOGGER_NAME) final Logger logger,
+      final SystemProperties systemProperties) {
     this.identityListener = identityListener;
     this.applicationCallContextProvider = applicationCallContextProvider;
     this.hashGenerator = hashGenerator;
     this.logger = logger;
+    this.systemProperties = systemProperties;
   }
 
   public IdentityServiceInitializationResult initializeIsis(
@@ -108,7 +108,7 @@ public class IdentityServiceInitializer {
       final String nonRandomPassword = "ChangeThisPassword";
       this.logger.debug("Initial password for tenant super user '{}' is '{}'. This should be changed immediately.", tenantIdentifier, nonRandomPassword);
 
-      final byte[] salt = Base64Utils.encode(("antony" + tenantIdentifier + this.domain).getBytes());
+      final byte[] salt = Base64Utils.encode(("antony" + tenantIdentifier + this.systemProperties.getDomain()).getBytes());
 
       final String encodedPassword = Base64Utils.encodeToString(nonRandomPassword.getBytes());
 

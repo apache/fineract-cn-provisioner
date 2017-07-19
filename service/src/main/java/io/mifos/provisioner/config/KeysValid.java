@@ -13,14 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.mifos.provisioner.internal.util;
+package io.mifos.provisioner.config;
 
-public enum DataStoreOption {
-  ALL,
-  CASSANDRA,
-  RDBMS;
+import javax.validation.Constraint;
+import javax.validation.Payload;
+import java.lang.annotation.*;
 
-  public boolean isEnabled(final DataStoreOption dataStoreOption) {
-    return this == ALL || this == dataStoreOption;
-  }
+/**
+ * @author Myrle Krantz
+ */
+@SuppressWarnings("unused")
+@Target({ElementType.TYPE})
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+@Constraint(
+    validatedBy = {CheckKeysValid.class}
+)
+public @interface KeysValid {
+  String message() default "Public and private keys must be valid and matching.";
+
+  Class<?>[] groups() default {};
+
+  Class<? extends Payload>[] payload() default {};
 }
