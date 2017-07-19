@@ -14,30 +14,13 @@
 # limitations under the License.
 #
 
-eureka:
-  client:
-    serviceUrl:
-      defaultZone: http://localhost:8761/eureka/
+system:
+  domain: mifos.io
+  dataStoreOption: ALL # possible values ALL, CASSANDRA, RDBMS
+  token:
+    ttl: 60
 
-server:
-  port: 9090
-  contextPath: /provisioner/v1/*
 
-flyway:
-  enabled: false
-
-cassandra:
-  clusterName: staging_cluster
-  contactPoints: 127.0.0.1:9042,127.0.0.2:9042,127.0.0.3:9042
-  replication:
-    default:
-      type: Network
-      replicas: datacenter1:3
-
-mariadb:
-  driverClass: org.mariadb.jdbc.Driver
-  database: seshat
-  host: localhost
-  port: 3306
-  user: root
-  password: mysql
+activemq:
+  brokerUrl: vm://localhost?broker.persistent=false
+  concurrency: 3-10

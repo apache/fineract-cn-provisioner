@@ -21,7 +21,6 @@ import io.mifos.anubis.api.v1.domain.AllowedOperation;
 import io.mifos.anubis.api.v1.domain.ApplicationSignatureSet;
 import io.mifos.anubis.api.v1.domain.PermittableEndpoint;
 import io.mifos.anubis.api.v1.domain.Signature;
-import io.mifos.anubis.provider.SystemRsaKeyProvider;
 import io.mifos.anubis.test.v1.SystemSecurityEnvironment;
 import io.mifos.core.api.context.AutoSeshat;
 import io.mifos.core.api.util.ApiConstants;
@@ -40,7 +39,6 @@ import io.mifos.provisioner.ProvisionerCassandraInitializer;
 import io.mifos.provisioner.ProvisionerMariaDBInitializer;
 import io.mifos.provisioner.api.v1.client.Provisioner;
 import io.mifos.provisioner.api.v1.domain.*;
-import io.mifos.provisioner.config.ProvisionerActiveMQProperties;
 import io.mifos.provisioner.config.ProvisionerConstants;
 import io.mifos.provisioner.config.ProvisionerServiceConfig;
 import io.mifos.provisioner.internal.listener.IdentityListener;
@@ -77,11 +75,7 @@ import static org.mockito.Mockito.*;
  * @author Myrle Krantz
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT,
-        properties = {
-                ProvisionerActiveMQProperties.ACTIVEMQ_BROKER_URL_PROP + "=" + ProvisionerActiveMQProperties.ACTIVEMQ_BROKER_URL_DEFAULT,
-                ProvisionerActiveMQProperties.ACTIVEMQ_CONCURRENCY_PROP + "=" + ProvisionerActiveMQProperties.ACTIVEMQ_CONCURRENCY_DEFAULT}
-)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 public class TestTenantApplicationAssignment {
   private static final String APP_NAME = "provisioner-v1";
   private static final String CLIENT_ID = "sillyRabbit";
@@ -128,24 +122,21 @@ public class TestTenantApplicationAssignment {
           .around(mariaDBInitializer)
           .around(cassandraInitializer);
 
+  @SuppressWarnings("SpringAutowiredFieldsWarningInspection")
   @Autowired
   private Provisioner provisioner;
 
+  @SuppressWarnings("SpringAutowiredFieldsWarningInspection")
   @Autowired
-  @Qualifier("tokenProviderSpy")
-  protected TokenProvider tokenProviderSpy;
+  private ApplicationCallContextProvider applicationCallContextProviderSpy;
 
+  @SuppressWarnings("SpringAutowiredFieldsWarningInspection")
   @Autowired
-  protected ApplicationCallContextProvider applicationCallContextProviderSpy;
+  private IdentityListener identityListener;
 
+  @SuppressWarnings("SpringAutowiredFieldsWarningInspection")
   @Autowired
-  protected SystemRsaKeyProvider systemRsaKeyProvider;
-
-  @Autowired
-  protected IdentityListener identityListener;
-
-  @Autowired
-  protected Gson gson;
+  private Gson gson;
 
   private AutoSeshat autoSeshat;
 

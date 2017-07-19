@@ -15,7 +15,6 @@
  */
 package io.mifos.provisioner.config;
 
-import io.mifos.anubis.config.AnubisConstants;
 import io.mifos.anubis.config.EnableAnubis;
 import io.mifos.anubis.token.SystemAccessTokenSerializer;
 import io.mifos.core.api.util.ApiFactory;
@@ -36,13 +35,10 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.env.Environment;
 import org.springframework.jms.config.DefaultJmsListenerContainerFactory;
 import org.springframework.jms.config.JmsListenerContainerFactory;
 import org.springframework.web.servlet.config.annotation.PathMatchConfigurer;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
-
-import java.math.BigInteger;
 
 @Configuration
 @EnableAutoConfiguration
@@ -60,7 +56,7 @@ import java.math.BigInteger;
 @EnableCassandra
 @EnableServiceException
 @EnableApplicationName
-@EnableConfigurationProperties({ProvisionerActiveMQProperties.class})
+@EnableConfigurationProperties({ProvisionerActiveMQProperties.class, ProvisionerProperties.class, SystemProperties.class})
 public class ProvisionerServiceConfig extends WebMvcConfigurerAdapter {
 
   public ProvisionerServiceConfig() {
@@ -73,15 +69,15 @@ public class ProvisionerServiceConfig extends WebMvcConfigurerAdapter {
   }
 
   @Bean(name = "tokenProvider")
-  public TokenProvider tokenProvider(final Environment environment,
+  public TokenProvider tokenProvider(final SystemProperties systemProperties,
                                      @SuppressWarnings("SpringJavaAutowiringInspection") final SystemAccessTokenSerializer tokenSerializer,
                                      @Qualifier(ProvisionerConstants.LOGGER_NAME) final Logger logger) {
-    final String timestamp = environment.getProperty(AnubisConstants.PUBLIC_KEY_TIMESTAMP_PROPERTY);
+    final String timestamp = systemProperties.getPublicKey().getTimestamp();
     logger.info("Provisioner key timestamp: " + timestamp);
 
     return new TokenProvider( timestamp,
-        new BigInteger(environment.getProperty("system.privateKey.modulus")),
-        new BigInteger(environment.getProperty("system.privateKey.exponent")), tokenSerializer);
+        systemProperties.getPrivateKey().getModulus(),
+        systemProperties.getPrivateKey().getExponent(), tokenSerializer);
   }
 
   @Bean

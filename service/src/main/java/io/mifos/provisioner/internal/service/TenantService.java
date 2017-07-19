@@ -23,6 +23,7 @@ import io.mifos.provisioner.api.v1.domain.CassandraConnectionInfo;
 import io.mifos.provisioner.api.v1.domain.DatabaseConnectionInfo;
 import io.mifos.provisioner.api.v1.domain.Tenant;
 import io.mifos.provisioner.config.ProvisionerConstants;
+import io.mifos.provisioner.config.ProvisionerProperties;
 import io.mifos.provisioner.internal.repository.TenantCassandraRepository;
 import io.mifos.provisioner.internal.repository.TenantDAO;
 import io.mifos.provisioner.internal.repository.TenantEntity;
@@ -54,6 +55,7 @@ public class TenantService {
   private final TenantAuthorizationDataRepository tenantAuthorizationDataRepository;
   private final TenantCassandraRepository tenantCassandraRepository;
   private final IdentityServiceInitializer identityServiceInitializer;
+  private final ProvisionerProperties provisionerProperties;
 
 
   @Autowired
@@ -62,7 +64,8 @@ public class TenantService {
                        final TenantApplicationService tenantApplicationService,
                        @SuppressWarnings("SpringJavaAutowiringInspection") final TenantAuthorizationDataRepository tenantAuthorizationDataRepository,
                        final TenantCassandraRepository tenantCassandraRepository,
-                       final IdentityServiceInitializer identityServiceInitializer) {
+                       final IdentityServiceInitializer identityServiceInitializer,
+                       final ProvisionerProperties provisionerProperties) {
     super();
     this.logger = logger;
     this.environment = environment;
@@ -70,6 +73,7 @@ public class TenantService {
     this.tenantAuthorizationDataRepository = tenantAuthorizationDataRepository;
     this.tenantCassandraRepository = tenantCassandraRepository;
     this.identityServiceInitializer = identityServiceInitializer;
+    this.provisionerProperties = provisionerProperties;
   }
 
   public void create(final Tenant tenant) {
@@ -78,8 +82,7 @@ public class TenantService {
   }
 
   private void initializeKeyspace(final @Nonnull Tenant tenant) {
-    final DataStoreOption dataStoreOption = DataStoreOption.valueOf(
-            this.environment.getProperty(DataStoreOption.PROPERTY_NAME, DataStoreOption.PROPERTY_DEFAULT_VALUE));
+    final DataStoreOption dataStoreOption = provisionerProperties.getDataStoreOption();
     if (dataStoreOption.isEnabled(DataStoreOption.CASSANDRA)) {
       final CassandraConnectionInfo cassandraConnectionInfo = tenant.getCassandraConnectionInfo();
 
@@ -127,8 +130,7 @@ public class TenantService {
   }
 
   private void fetchAllCassandra(final @Nonnull List<Tenant> tenants) {
-    final DataStoreOption dataStoreOption = DataStoreOption.valueOf(
-            this.environment.getProperty(DataStoreOption.PROPERTY_NAME, DataStoreOption.PROPERTY_DEFAULT_VALUE));
+    final DataStoreOption dataStoreOption = provisionerProperties.getDataStoreOption();
     if (dataStoreOption.isEnabled(DataStoreOption.CASSANDRA)) {
       List<TenantEntity> tenantEntities = tenantCassandraRepository.fetchAll();
 
@@ -158,16 +160,13 @@ public class TenantService {
   }
 
   private void fetchAllDatabase(final ArrayList<Tenant> tenants) {
-    final DataStoreOption dataStoreOption = DataStoreOption.valueOf(
-        this.environment.getProperty(DataStoreOption.PROPERTY_NAME, DataStoreOption.PROPERTY_DEFAULT_VALUE));
+    final DataStoreOption dataStoreOption = provisionerProperties.getDataStoreOption();
     if (dataStoreOption.isEnabled(DataStoreOption.RDBMS)) {
       if (tenants.size() > 0) {
         try (final Connection connection = DataSourceUtils.createProvisionerConnection(this.environment)) {
           for (final Tenant tenant : tenants) {
             final Optional<TenantDAO> optionalTenantDAO = TenantDAO.find(connection, tenant.getIdentifier());
-            if (optionalTenantDAO.isPresent()) {
-              tenant.setDatabaseConnectionInfo(optionalTenantDAO.get().map());
-            }
+            optionalTenantDAO.ifPresent(tenantDAO -> tenant.setDatabaseConnectionInfo(tenantDAO.map()));
           }
         } catch (final SQLException sqlex) {
           this.logger.error(sqlex.getMessage(), sqlex);
@@ -191,8 +190,7 @@ public class TenantService {
   }
 
   private Optional<Tenant> findCassandra(final String identifier) {
-    final DataStoreOption dataStoreOption = DataStoreOption.valueOf(
-        this.environment.getProperty(DataStoreOption.PROPERTY_NAME, DataStoreOption.PROPERTY_DEFAULT_VALUE));
+    final DataStoreOption dataStoreOption = provisionerProperties.getDataStoreOption();
     if (dataStoreOption.isEnabled(DataStoreOption.CASSANDRA)) {
       return tenantCassandraRepository.get(identifier).map(x -> {
                 final Tenant tenant = new Tenant();
@@ -208,8 +206,7 @@ public class TenantService {
   }
 
   private Tenant findInDatabase(final @Nonnull Tenant tenant, final @Nonnull String identifier) {
-    final DataStoreOption dataStoreOption = DataStoreOption.valueOf(
-        this.environment.getProperty(DataStoreOption.PROPERTY_NAME, DataStoreOption.PROPERTY_DEFAULT_VALUE));
+    final DataStoreOption dataStoreOption = provisionerProperties.getDataStoreOption();
     if (dataStoreOption.isEnabled(DataStoreOption.RDBMS)) {
       try (final Connection connection = DataSourceUtils.createProvisionerConnection(this.environment)) {
         final Optional<TenantDAO> optionalTenantDAO = TenantDAO.find(connection, identifier);
@@ -226,8 +223,7 @@ public class TenantService {
   }
 
   private void initializeDatabase(final Tenant tenant) {
-    final DataStoreOption dataStoreOption = DataStoreOption.valueOf(
-        this.environment.getProperty(DataStoreOption.PROPERTY_NAME, DataStoreOption.PROPERTY_DEFAULT_VALUE));
+    final DataStoreOption dataStoreOption = provisionerProperties.getDataStoreOption();
     if (dataStoreOption.isEnabled(DataStoreOption.RDBMS)) {
 
       try (
@@ -274,8 +270,7 @@ public class TenantService {
   }
 
   private void deleteFromCassandra(final @Nonnull String identifier) {
-    final DataStoreOption dataStoreOption = DataStoreOption.valueOf(
-        this.environment.getProperty(DataStoreOption.PROPERTY_NAME, DataStoreOption.PROPERTY_DEFAULT_VALUE));
+    final DataStoreOption dataStoreOption = provisionerProperties.getDataStoreOption();
     if (dataStoreOption.isEnabled(DataStoreOption.CASSANDRA)) {
       final Optional<TenantEntity> tenantEntity = tenantCassandraRepository.get(identifier);
       tenantEntity.ifPresent(x ->
@@ -287,8 +282,7 @@ public class TenantService {
   }
 
   private void deleteDatabase(final String identifier) {
-    final DataStoreOption dataStoreOption = DataStoreOption.valueOf(
-        this.environment.getProperty(DataStoreOption.PROPERTY_NAME, DataStoreOption.PROPERTY_DEFAULT_VALUE));
+    final DataStoreOption dataStoreOption = provisionerProperties.getDataStoreOption();
     if (dataStoreOption.isEnabled(DataStoreOption.RDBMS)) {
 
       try (final Connection provisionerConnection = DataSourceUtils.createProvisionerConnection(this.environment)) {

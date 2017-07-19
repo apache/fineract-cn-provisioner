@@ -27,6 +27,7 @@ import com.datastax.driver.mapping.MappingManager;
 import io.mifos.anubis.token.TokenSerializationResult;
 import io.mifos.core.cassandra.core.CassandraSessionProvider;
 import io.mifos.core.lang.ServiceException;
+import io.mifos.provisioner.config.SystemProperties;
 import io.mifos.provisioner.internal.repository.UserEntity;
 import io.mifos.provisioner.api.v1.domain.AuthenticationResponse;
 import io.mifos.provisioner.api.v1.domain.PasswordPolicy;
@@ -58,8 +59,7 @@ public class AuthenticationService {
 
   @Value("${spring.application.name}")
   private String applicationName;
-  @Value("${system.token.ttl}")
-  private Integer ttl;
+  private final Integer ttl;
   private final Logger logger;
   private final CassandraSessionProvider cassandraSessionProvider;
   private final HashGenerator hashGenerator;
@@ -70,8 +70,10 @@ public class AuthenticationService {
   public AuthenticationService(@Qualifier(ProvisionerConstants.LOGGER_NAME) final Logger logger,
                                final CassandraSessionProvider cassandraSessionProvider,
                                final HashGenerator hashGenerator,
-                               final TokenProvider tokenProvider) {
+                               final TokenProvider tokenProvider,
+                               final SystemProperties systemProperties) {
     super();
+    this.ttl = systemProperties.getToken().getTtl();
     this.logger = logger;
     this.cassandraSessionProvider = cassandraSessionProvider;
     this.hashGenerator = hashGenerator;
