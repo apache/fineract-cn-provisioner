@@ -254,11 +254,11 @@ public class IdentityServiceInitializer {
     }
     catch (final PermittableGroupAlreadyExistsException groupAlreadyExistsException)
     {
+      identityListener.withdrawExpectation(eventExpectation);
       //if the group already exists, read out and compare.  If the group is the same, there is nothing left to do.
       final PermittableGroup existingGroup = identityService.getPermittableGroup(permittableGroup.getIdentifier());
       if (!existingGroup.getIdentifier().equals(permittableGroup.getIdentifier())) {
         logger.error("Group '{}' already exists for tenant {}, but has a different name {} (strange).", permittableGroup.getIdentifier(), TenantContextHolder.checkedGetIdentifier(), existingGroup.getIdentifier());
-        identityListener.withdrawExpectation(eventExpectation);
       }
 
       //Compare as sets because I'm not going to get into a hissy fit over order.
@@ -266,13 +266,12 @@ public class IdentityServiceInitializer {
       final Set<PermittableEndpoint> newGroupPermittables = new HashSet<>(permittableGroup.getPermittables());
       if (!existingGroupPermittables.equals(newGroupPermittables)) {
         logger.error("Group '{}' already exists for tenant {}, but has different contents.", permittableGroup.getIdentifier(), TenantContextHolder.checkedGetIdentifier());
-        identityListener.withdrawExpectation(eventExpectation);
       }
     }
     catch (final RuntimeException unexpected)
     {
-      logger.error("Creating group '{}' for tenant {} failed.", permittableGroup.getIdentifier(), TenantContextHolder.checkedGetIdentifier(), unexpected);
       identityListener.withdrawExpectation(eventExpectation);
+      logger.error("Creating group '{}' for tenant {} failed.", permittableGroup.getIdentifier(), TenantContextHolder.checkedGetIdentifier(), unexpected);
     }
     return eventExpectation;
   }

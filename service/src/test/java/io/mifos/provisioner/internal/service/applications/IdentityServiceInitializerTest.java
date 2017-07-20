@@ -103,7 +103,8 @@ public class IdentityServiceInitializerTest {
 
     try (final AutoTenantContext ignored = new AutoTenantContext("blah")) {
       final SystemProperties systemProperties = new SystemProperties();
-      new IdentityServiceInitializer(identityListenerMock, null, null, loggerMock, systemProperties).createOrFindPermittableGroup(identityServiceMock, group1);
+      new IdentityServiceInitializer(identityListenerMock, null, null, loggerMock, systemProperties)
+          .createOrFindPermittableGroup(identityServiceMock, group1);
     }
   }
 
@@ -118,7 +119,8 @@ public class IdentityServiceInitializerTest {
 
     try (final AutoTenantContext ignored = new AutoTenantContext("blah")) {
       final SystemProperties systemProperties = new SystemProperties();
-      new IdentityServiceInitializer(identityListenerMock, null, null, loggerMock, systemProperties).createOrFindPermittableGroup(identityServiceMock, group1);
+      new IdentityServiceInitializer(identityListenerMock, null, null, loggerMock, systemProperties)
+          .createOrFindPermittableGroup(identityServiceMock, group1);
     }
 
     verify(loggerMock).error(anyString(), anyString(), anyString());
@@ -135,7 +137,8 @@ public class IdentityServiceInitializerTest {
 
     try (final AutoTenantContext ignored = new AutoTenantContext("blah")) {
       final SystemProperties systemProperties = new SystemProperties();
-      new IdentityServiceInitializer(identityListenerMock, null, null, loggerMock, systemProperties).createOrFindPermittableGroup(identityServiceMock, group1);
+      new IdentityServiceInitializer(identityListenerMock, null, null, loggerMock, systemProperties)
+          .createOrFindPermittableGroup(identityServiceMock, group1);
     }
 
     verify(loggerMock).error(anyString(), anyString(), anyString(), isA(IllegalStateException.class));
