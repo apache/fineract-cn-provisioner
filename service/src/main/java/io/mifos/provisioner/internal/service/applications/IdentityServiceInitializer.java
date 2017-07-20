@@ -149,7 +149,7 @@ public class IdentityServiceInitializer {
       //You might look at this and wonder: "Why isn't she returning a stream here? She's just turning it back into
       //a stream on the other side..."
       //The answer is that you need the createOrFindPermittableGroup to be executed in the proper tenant context. If you
-      //return the stream, the call to createOrFindPermittableGroup will be executed when the stream is itereated over.
+      //return the stream, the call to createOrFindPermittableGroup will be executed when the stream is iterated over.
       return permittableGroups.map(x -> createOrFindPermittableGroup(identityService, x)).collect(Collectors.toList());
     } catch (final Exception e) {
       throw new IllegalStateException(e);
