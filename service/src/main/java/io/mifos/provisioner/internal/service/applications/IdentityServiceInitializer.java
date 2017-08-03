@@ -265,7 +265,10 @@ public class IdentityServiceInitializer {
       final Set<PermittableEndpoint> existingGroupPermittables = new HashSet<>(existingGroup.getPermittables());
       final Set<PermittableEndpoint> newGroupPermittables = new HashSet<>(permittableGroup.getPermittables());
       if (!existingGroupPermittables.equals(newGroupPermittables)) {
-        logger.error("Group '{}' already exists for tenant {}, but has different contents.", permittableGroup.getIdentifier(), TenantContextHolder.checkedGetIdentifier());
+        logger.warn("Group '{}' already exists for tenant {}, but has different contents. " +
+            "Needed contents are '{}', existing contents are '{}'",
+            permittableGroup.getIdentifier(), TenantContextHolder.checkedGetIdentifier(),
+            newGroupPermittables, existingGroupPermittables);
       }
     }
     catch (final RuntimeException unexpected)
