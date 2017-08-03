@@ -207,7 +207,7 @@ public class ProvisionerInitializer {
           "  identifier    VARCHAR(32) NOT NULL," +
           "  driver_class  VARCHAR(255) NOT NULL," +
           "  database_name VARCHAR(32) NOT NULL," +
-          "  host          VARCHAR(32) NOT NULL," +
+          "  host          VARCHAR(512) NOT NULL," +
           "  port          VARCHAR(5)  NOT NULL," +
           "  a_user        VARCHAR(32) NOT NULL," +
           "  pwd           VARCHAR(32) NOT NULL," +
