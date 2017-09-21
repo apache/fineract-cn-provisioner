@@ -17,7 +17,9 @@ package io.mifos.provisioner.internal.listener;
 
 import com.google.gson.Gson;
 import io.mifos.core.lang.config.TenantHeaderFilter;
-import io.mifos.identity.api.v1.events.ApplicationPermissionEvent;
+import io.mifos.core.lang.listening.EventExpectation;
+import io.mifos.core.lang.listening.EventKey;
+import io.mifos.core.lang.listening.TenantedEventListener;
 import io.mifos.identity.api.v1.events.ApplicationSignatureEvent;
 import io.mifos.identity.api.v1.events.EventConstants;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,10 +27,6 @@ import org.springframework.jms.annotation.JmsListener;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.stereotype.Component;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
-import static io.mifos.identity.api.v1.events.EventConstants.OPERATION_POST_APPLICATION_PERMISSION;
 import static io.mifos.identity.api.v1.events.EventConstants.OPERATION_POST_PERMITTABLE_GROUP;
 import static io.mifos.identity.api.v1.events.EventConstants.OPERATION_PUT_APPLICATION_SIGNATURE;
 
@@ -38,7 +36,7 @@ import static io.mifos.identity.api.v1.events.EventConstants.OPERATION_PUT_APPLI
 @Component
 public class IdentityListener {
   private final Gson gson;
-  private final Map<EventKey, EventExpectation> eventExpectations = new ConcurrentHashMap<>();
+  private final TenantedEventListener eventListener = new TenantedEventListener();
 
   @Autowired
   public IdentityListener(final Gson gson) {
@@ -53,25 +51,7 @@ public class IdentityListener {
   public void onCreatePermittableGroup(
           @Header(TenantHeaderFilter.TENANT_HEADER)final String tenantIdentifier,
           final String payload) throws Exception {
-    final EventExpectation eventExpectation = eventExpectations.remove(new EventKey(tenantIdentifier, OPERATION_POST_PERMITTABLE_GROUP, payload));
-    if (eventExpectation != null) {
-      eventExpectation.setEventFound(true);
-    }
-  }
-
-  @JmsListener(
-          subscription = EventConstants.DESTINATION,
-          destination = EventConstants.DESTINATION,
-          selector = EventConstants.SELECTOR_POST_APPLICATION_PERMISSION
-  )
-  public void onCreateApplicationPermission(
-          @Header(TenantHeaderFilter.TENANT_HEADER)final String tenantIdentifier,
-          final String payload) throws Exception {
-    final ApplicationPermissionEvent event = gson.fromJson(payload, ApplicationPermissionEvent.class);
-    final EventExpectation eventExpectation = eventExpectations.remove(new EventKey(tenantIdentifier, OPERATION_POST_APPLICATION_PERMISSION, event));
-    if (eventExpectation != null) {
-      eventExpectation.setEventFound(true);
-    }
+    eventListener.notify(new EventKey(tenantIdentifier, OPERATION_POST_PERMITTABLE_GROUP, payload));
   }
 
   @JmsListener(
@@ -83,44 +63,22 @@ public class IdentityListener {
           @Header(TenantHeaderFilter.TENANT_HEADER)final String tenantIdentifier,
           final String payload) throws Exception {
     final ApplicationSignatureEvent event = gson.fromJson(payload, ApplicationSignatureEvent.class);
-    final EventExpectation eventExpectation = eventExpectations.remove(new EventKey(tenantIdentifier, OPERATION_PUT_APPLICATION_SIGNATURE, event));
-    if (eventExpectation != null) {
-      eventExpectation.setEventFound(true);
-    }
+    eventListener.notify(new EventKey(tenantIdentifier, OPERATION_PUT_APPLICATION_SIGNATURE, event));
   }
 
   public EventExpectation expectPermittableGroupCreation(final String tenantIdentifier,
                                                          final String permittableGroupIdentifier) {
-    final EventKey key = new EventKey(tenantIdentifier, OPERATION_POST_PERMITTABLE_GROUP, permittableGroupIdentifier);
-    final EventExpectation value = new EventExpectation(key);
-    eventExpectations.put(key, value);
-    return value;
-  }
-
-  public EventExpectation expectApplicationPermissionCreation(final String tenantIdentifier,
-                                                              final String applicationIdentifier,
-                                                              final String permittableGroupIdentifier) {
-    final ApplicationPermissionEvent expectedEvent = new ApplicationPermissionEvent(applicationIdentifier, permittableGroupIdentifier);
-    final EventKey key = new EventKey(tenantIdentifier, OPERATION_POST_APPLICATION_PERMISSION, expectedEvent);
-    final EventExpectation value = new EventExpectation(key);
-    eventExpectations.put(key, value);
-    return value;
+    return eventListener.expect(new EventKey(tenantIdentifier, OPERATION_POST_PERMITTABLE_GROUP, permittableGroupIdentifier));
   }
 
   public EventExpectation expectApplicationSignatureSet(final String tenantIdentifier,
                                                         final String applicationIdentifier,
                                                         final String keyTimestamp) {
     final ApplicationSignatureEvent expectedEvent = new ApplicationSignatureEvent(applicationIdentifier, keyTimestamp);
-    final EventKey key = new EventKey(tenantIdentifier, OPERATION_PUT_APPLICATION_SIGNATURE, expectedEvent);
-    final EventExpectation value = new EventExpectation(key);
-    eventExpectations.put(key, value);
-    return value;
+    return eventListener.expect(new EventKey(tenantIdentifier, OPERATION_PUT_APPLICATION_SIGNATURE, expectedEvent));
   }
 
   public void withdrawExpectation(final EventExpectation eventExpectation) {
-    final EventExpectation expectation = eventExpectations.remove(eventExpectation.getKey());
-    if (expectation != null) {
-      eventExpectation.setEventWithdrawn(true);
-    }
+    eventListener.withdrawExpectation(eventExpectation);
   }
 }
