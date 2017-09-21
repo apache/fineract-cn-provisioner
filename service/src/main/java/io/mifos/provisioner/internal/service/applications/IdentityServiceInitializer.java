@@ -23,6 +23,7 @@ import io.mifos.anubis.api.v1.domain.PermittableEndpoint;
 import io.mifos.core.api.util.InvalidTokenException;
 import io.mifos.core.lang.ServiceException;
 import io.mifos.core.lang.TenantContextHolder;
+import io.mifos.core.lang.listening.EventExpectation;
 import io.mifos.identity.api.v1.client.ApplicationPermissionAlreadyExistsException;
 import io.mifos.identity.api.v1.client.CallEndpointSetAlreadyExistsException;
 import io.mifos.identity.api.v1.client.IdentityManager;
@@ -34,7 +35,6 @@ import io.mifos.permittedfeignclient.api.v1.client.ApplicationPermissionRequirem
 import io.mifos.permittedfeignclient.api.v1.domain.ApplicationPermission;
 import io.mifos.provisioner.config.ProvisionerConstants;
 import io.mifos.provisioner.config.SystemProperties;
-import io.mifos.provisioner.internal.listener.EventExpectation;
 import io.mifos.provisioner.internal.listener.IdentityListener;
 import io.mifos.tool.crypto.HashGenerator;
 import org.slf4j.Logger;
