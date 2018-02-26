@@ -33,23 +33,23 @@ dependencies {
             [group: 'org.springframework', name: 'spring-jms', version: versions.springcontext],
             [group: 'org.apache.activemq', name: 'activemq-broker', version: versions.activeMQ],
             [group: 'org.apache.activemq', name: 'activemq-spring', version: versions.activeMQ],
-            [group: 'io.mifos.provisioner', name: 'api', version: project.version],
-            [group: 'io.mifos.anubis', name: 'library', version: versions.frameworkanubis],
-            [group: 'io.mifos.anubis', name: 'api', version: versions.frameworkanubis],
-            [group: 'io.mifos.permitted-feign-client', name: 'api', version: versions.frameworkanput],
-            [group: 'io.mifos.identity', name: 'api', version: versions.mifosidentityservice],
+            [group: 'org.apache.fineract.cn.provisioner', name: 'api', version: project.version],
+            [group: 'org.apache.fineract.cn.anubis', name: 'library', version: versions.frameworkanubis],
+            [group: 'org.apache.fineract.cn.anubis', name: 'api', version: versions.frameworkanubis],
+            [group: 'org.apache.fineract.cn.permitted-feign-client', name: 'api', version: versions.frameworkanput],
+            [group: 'org.apache.fineract.cn.identity', name: 'api', version: versions.mifosidentityservice],
             [group: 'com.google.code.gson', name: 'gson', version: versions.gson],
-            [group: 'io.mifos.core', name: 'api', version: versions.frameworkapi],
-            [group: 'io.mifos.core', name: 'lang', version: versions.frameworklang],
-            [group: 'io.mifos.core', name: 'async', version: versions.frameworkasync],
-            [group: 'io.mifos.core', name: 'cassandra', version: versions.frameworkcassandra],
-            [group: 'io.mifos.core', name: 'mariadb', version: versions.frameworkmariadb],
+            [group: 'org.apache.fineract.cn', name: 'api', version: versions.frameworkapi],
+            [group: 'org.apache.fineract.cn', name: 'lang', version: versions.frameworklang],
+            [group: 'org.apache.fineract.cn', name: 'async', version: versions.frameworkasync],
+            [group: 'org.apache.fineract.cn', name: 'cassandra', version: versions.frameworkcassandra],
+            [group: 'org.apache.fineract.cn', name: 'mariadb', version: versions.frameworkmariadb],
             [group: 'org.hibernate', name: 'hibernate-validator', version: versions.validator],
-            [group: 'io.mifos.tools', name: 'crypto', version: versions.frameworkcrypto],
+            [group: 'org.apache.fineract.cn', name: 'crypto', version: versions.frameworkcrypto],
     )
 
     testCompile(
-            [group: 'io.mifos.core', name: 'test', version: versions.frameworktest],
+            [group: 'org.apache.fineract.cn', name: 'test', version: versions.frameworktest],
     )
 }
 

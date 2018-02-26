@@ -1,4 +1,4 @@
-group 'io.mifos.provisioner'
+group 'org.apache.fineract.cn.provisioner'
 version '0.1.0-BUILD-SNAPSHOT'
 
 ext.versions = [
