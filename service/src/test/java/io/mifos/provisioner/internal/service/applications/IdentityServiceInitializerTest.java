@@ -126,7 +126,7 @@ public class IdentityServiceInitializerTest {
           .createOrFindPermittableGroup(identityServiceMock, group1);
     }
 
-    verify(loggerMock).error(anyString(), anyString(), anyString());
+    verify(loggerMock).warn(anyString(), anyString(), anyString(), anyObject(), anyObject());
   }
 
   @Test
