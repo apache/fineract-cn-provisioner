@@ -18,13 +18,13 @@
  */
 package io.mifos.provisioner.internal.service.applications;
 
-import io.mifos.anubis.api.v1.RoleConstants;
-import io.mifos.anubis.api.v1.TokenConstants;
-import io.mifos.core.api.context.AutoSeshat;
-import io.mifos.core.api.context.AutoUserContext;
-import io.mifos.core.api.util.ApiFactory;
-import io.mifos.core.lang.AutoTenantContext;
 import io.mifos.provisioner.internal.util.TokenProvider;
+import org.apache.fineract.cn.anubis.api.v1.RoleConstants;
+import org.apache.fineract.cn.anubis.api.v1.TokenConstants;
+import org.apache.fineract.cn.api.context.AutoSeshat;
+import org.apache.fineract.cn.api.context.AutoUserContext;
+import org.apache.fineract.cn.api.util.ApiFactory;
+import org.apache.fineract.cn.lang.AutoTenantContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 

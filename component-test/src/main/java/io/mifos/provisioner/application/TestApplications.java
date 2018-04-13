@@ -19,14 +19,14 @@
 package io.mifos.provisioner.application;
 
 
-import io.mifos.core.api.context.AutoSeshat;
-import io.mifos.core.api.util.ApiConstants;
-import io.mifos.core.api.util.NotFoundException;
 import io.mifos.provisioner.AbstractServiceTest;
 import io.mifos.provisioner.api.v1.client.DuplicateIdentifierException;
 import io.mifos.provisioner.api.v1.domain.Application;
 import io.mifos.provisioner.api.v1.domain.AuthenticationResponse;
 import io.mifos.provisioner.config.ProvisionerConstants;
+import org.apache.fineract.cn.api.context.AutoSeshat;
+import org.apache.fineract.cn.api.util.ApiConstants;
+import org.apache.fineract.cn.api.util.NotFoundException;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;

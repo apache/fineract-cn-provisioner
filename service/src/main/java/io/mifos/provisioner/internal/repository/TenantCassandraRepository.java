@@ -29,19 +29,18 @@ import com.datastax.driver.core.schemabuilder.SchemaBuilder;
 import com.datastax.driver.mapping.Mapper;
 import com.datastax.driver.mapping.MappingManager;
 import com.datastax.driver.mapping.Result;
-import io.mifos.core.cassandra.core.CassandraSessionProvider;
-import io.mifos.core.cassandra.core.ReplicationStrategyResolver;
-import io.mifos.core.cassandra.util.CassandraConnectorConstants;
-import io.mifos.core.lang.ServiceException;
 import io.mifos.provisioner.internal.util.ContactPointUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.env.Environment;
-import org.springframework.stereotype.Component;
-
-import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
+import javax.annotation.Nonnull;
+import org.apache.fineract.cn.cassandra.core.CassandraSessionProvider;
+import org.apache.fineract.cn.cassandra.core.ReplicationStrategyResolver;
+import org.apache.fineract.cn.cassandra.util.CassandraConnectorConstants;
+import org.apache.fineract.cn.lang.ServiceException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
+import org.springframework.stereotype.Component;
 
 /**
  * @author Myrle Krantz

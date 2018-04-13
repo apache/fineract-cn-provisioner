@@ -22,9 +22,9 @@ import com.datastax.driver.core.KeyspaceMetadata;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Session;
 
-import io.mifos.core.cassandra.core.CassandraSessionProvider;
-import io.mifos.core.cassandra.util.CassandraConnectorConstants;
 import io.mifos.provisioner.AbstractServiceTest;
+import org.apache.fineract.cn.cassandra.core.CassandraSessionProvider;
+import org.apache.fineract.cn.cassandra.util.CassandraConnectorConstants;
 import org.junit.Assert;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;

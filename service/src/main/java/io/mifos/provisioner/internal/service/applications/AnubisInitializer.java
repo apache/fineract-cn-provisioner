@@ -18,16 +18,15 @@
  */
 package io.mifos.provisioner.internal.service.applications;
 
-import io.mifos.anubis.api.v1.client.Anubis;
-import io.mifos.anubis.api.v1.domain.ApplicationSignatureSet;
-import io.mifos.anubis.api.v1.domain.Signature;
 import io.mifos.provisioner.config.ProvisionerConstants;
+import javax.annotation.Nonnull;
+import org.apache.fineract.cn.anubis.api.v1.client.Anubis;
+import org.apache.fineract.cn.anubis.api.v1.domain.ApplicationSignatureSet;
+import org.apache.fineract.cn.anubis.api.v1.domain.Signature;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
-
-import javax.annotation.Nonnull;
 
 /**
  * @author Myrle Krantz

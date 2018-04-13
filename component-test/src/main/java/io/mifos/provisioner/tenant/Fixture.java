@@ -19,10 +19,10 @@
 package io.mifos.provisioner.tenant;
 
 
-import io.mifos.core.test.env.TestEnvironment;
 import io.mifos.provisioner.api.v1.domain.CassandraConnectionInfo;
 import io.mifos.provisioner.api.v1.domain.DatabaseConnectionInfo;
 import io.mifos.provisioner.api.v1.domain.Tenant;
+import org.apache.fineract.cn.test.env.TestEnvironment;
 
 class Fixture {
   static Tenant getCompTestTenant() {

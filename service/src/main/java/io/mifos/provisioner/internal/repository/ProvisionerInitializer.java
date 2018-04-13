@@ -22,15 +22,22 @@ import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.DataType;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.schemabuilder.SchemaBuilder;
-import io.mifos.core.api.util.ApiConstants;
-import io.mifos.core.cassandra.core.CassandraSessionProvider;
-import io.mifos.core.cassandra.util.CassandraConnectorConstants;
-import io.mifos.core.mariadb.util.MariaDBConstants;
 import io.mifos.provisioner.config.ProvisionerConstants;
 import io.mifos.provisioner.internal.util.DataSourceUtils;
-import io.mifos.tool.crypto.HashGenerator;
-import io.mifos.tool.crypto.SaltGenerator;
+import java.nio.ByteBuffer;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.Date;
+import java.util.UUID;
+import javax.annotation.PostConstruct;
 import org.apache.commons.lang.StringUtils;
+import org.apache.fineract.cn.api.util.ApiConstants;
+import org.apache.fineract.cn.cassandra.core.CassandraSessionProvider;
+import org.apache.fineract.cn.cassandra.util.CassandraConnectorConstants;
+import org.apache.fineract.cn.crypto.HashGenerator;
+import org.apache.fineract.cn.crypto.SaltGenerator;
+import org.apache.fineract.cn.mariadb.util.MariaDBConstants;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -39,14 +46,6 @@ import org.springframework.core.env.Environment;
 import org.springframework.security.crypto.util.EncodingUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Base64Utils;
-
-import javax.annotation.PostConstruct;
-import java.nio.ByteBuffer;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.Date;
-import java.util.UUID;
 
 @SuppressWarnings({"SqlNoDataSourceInspection", "SqlDialectInspection", "unused"})
 @Component

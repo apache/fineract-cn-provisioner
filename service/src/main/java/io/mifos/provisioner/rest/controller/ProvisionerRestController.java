@@ -18,21 +18,34 @@
  */
 package io.mifos.provisioner.rest.controller;
 
-import io.mifos.anubis.annotation.AcceptedTokenType;
-import io.mifos.anubis.annotation.Permittable;
-import io.mifos.core.lang.ServiceException;
-import io.mifos.provisioner.api.v1.domain.*;
+import io.mifos.provisioner.api.v1.domain.Application;
+import io.mifos.provisioner.api.v1.domain.AssignedApplication;
+import io.mifos.provisioner.api.v1.domain.AuthenticationResponse;
+import io.mifos.provisioner.api.v1.domain.Client;
+import io.mifos.provisioner.api.v1.domain.IdentityManagerInitialization;
+import io.mifos.provisioner.api.v1.domain.PasswordPolicy;
+import io.mifos.provisioner.api.v1.domain.Tenant;
+import io.mifos.provisioner.config.ProvisionerConstants;
 import io.mifos.provisioner.internal.repository.ClientEntity;
 import io.mifos.provisioner.internal.repository.TenantApplicationEntity;
-import io.mifos.provisioner.rest.mapper.ApplicationMapper;
-import io.mifos.provisioner.rest.mapper.AssignedApplicationMapper;
-import io.mifos.provisioner.rest.mapper.ClientMapper;
 import io.mifos.provisioner.internal.service.ApplicationService;
 import io.mifos.provisioner.internal.service.AuthenticationService;
 import io.mifos.provisioner.internal.service.ClientService;
 import io.mifos.provisioner.internal.service.TenantApplicationService;
 import io.mifos.provisioner.internal.service.TenantService;
-import io.mifos.provisioner.config.ProvisionerConstants;
+import io.mifos.provisioner.rest.mapper.ApplicationMapper;
+import io.mifos.provisioner.rest.mapper.AssignedApplicationMapper;
+import io.mifos.provisioner.rest.mapper.ClientMapper;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import javax.validation.Valid;
+import org.apache.fineract.cn.anubis.annotation.AcceptedTokenType;
+import org.apache.fineract.cn.anubis.annotation.Permittable;
+import org.apache.fineract.cn.lang.ServiceException;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -45,10 +58,6 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
-
-import javax.validation.Valid;
-import java.util.*;
-import java.util.stream.Collectors;
 
 @SuppressWarnings("unused")
 @RestController
@@ -93,7 +102,8 @@ public class ProvisionerRestController {
                                                       @RequestParam("password") final String password) {
     if (!grantType.equals("password")) {
       this.logger.info("Authentication attempt with unknown grant type: " + grantType);
-      throw ServiceException.badRequest("Authentication attempt with unknown grant type: {0}", grantType);
+      throw ServiceException
+          .badRequest("Authentication attempt with unknown grant type: {0}", grantType);
     }
     return ResponseEntity.ok(this.authenticationService.authenticate(clientId, username, password));
   }

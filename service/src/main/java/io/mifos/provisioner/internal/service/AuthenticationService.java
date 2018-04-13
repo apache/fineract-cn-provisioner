@@ -26,27 +26,14 @@ import com.datastax.driver.core.Statement;
 import com.datastax.driver.core.utils.Bytes;
 import com.datastax.driver.mapping.Mapper;
 import com.datastax.driver.mapping.MappingManager;
-
-import io.mifos.anubis.token.TokenSerializationResult;
-import io.mifos.core.cassandra.core.CassandraSessionProvider;
-import io.mifos.core.lang.ServiceException;
-import io.mifos.provisioner.config.SystemProperties;
-import io.mifos.provisioner.internal.repository.UserEntity;
 import io.mifos.provisioner.api.v1.domain.AuthenticationResponse;
 import io.mifos.provisioner.api.v1.domain.PasswordPolicy;
+import io.mifos.provisioner.config.ProvisionerConstants;
+import io.mifos.provisioner.config.SystemProperties;
 import io.mifos.provisioner.internal.repository.ClientEntity;
 import io.mifos.provisioner.internal.repository.ConfigEntity;
+import io.mifos.provisioner.internal.repository.UserEntity;
 import io.mifos.provisioner.internal.util.TokenProvider;
-import io.mifos.provisioner.config.ProvisionerConstants;
-import io.mifos.tool.crypto.HashGenerator;
-import org.slf4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.crypto.util.EncodingUtils;
-import org.springframework.stereotype.Service;
-import org.springframework.util.Base64Utils;
-
 import java.nio.ByteBuffer;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -54,8 +41,18 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
-
 import javax.annotation.Nonnull;
+import org.apache.fineract.cn.anubis.token.TokenSerializationResult;
+import org.apache.fineract.cn.cassandra.core.CassandraSessionProvider;
+import org.apache.fineract.cn.crypto.HashGenerator;
+import org.apache.fineract.cn.lang.ServiceException;
+import org.slf4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.crypto.util.EncodingUtils;
+import org.springframework.stereotype.Service;
+import org.springframework.util.Base64Utils;
 
 @Service
 public class AuthenticationService {

@@ -18,15 +18,14 @@
  */
 package io.mifos.provisioner.internal.util;
 
-import io.mifos.anubis.api.v1.RoleConstants;
-import io.mifos.anubis.token.SystemAccessTokenSerializer;
-import io.mifos.anubis.token.TokenSerializationResult;
-
 import java.math.BigInteger;
 import java.security.KeyFactory;
 import java.security.PrivateKey;
 import java.security.spec.RSAPrivateKeySpec;
 import java.util.concurrent.TimeUnit;
+import org.apache.fineract.cn.anubis.api.v1.RoleConstants;
+import org.apache.fineract.cn.anubis.token.SystemAccessTokenSerializer;
+import org.apache.fineract.cn.anubis.token.TokenSerializationResult;
 
 public class TokenProvider {
   private final String keyTimestamp;

@@ -19,38 +19,45 @@
 package io.mifos.provisioner.internal.service.applications;
 
 
-import io.mifos.anubis.api.v1.client.Anubis;
-import io.mifos.anubis.api.v1.domain.AllowedOperation;
-import io.mifos.anubis.api.v1.domain.ApplicationSignatureSet;
-import io.mifos.anubis.api.v1.domain.PermittableEndpoint;
-import io.mifos.core.api.util.InvalidTokenException;
-import io.mifos.core.lang.ServiceException;
-import io.mifos.core.lang.TenantContextHolder;
-import io.mifos.core.lang.listening.EventExpectation;
-import io.mifos.identity.api.v1.client.ApplicationPermissionAlreadyExistsException;
-import io.mifos.identity.api.v1.client.CallEndpointSetAlreadyExistsException;
-import io.mifos.identity.api.v1.client.IdentityManager;
-import io.mifos.identity.api.v1.client.PermittableGroupAlreadyExistsException;
-import io.mifos.identity.api.v1.domain.CallEndpointSet;
-import io.mifos.identity.api.v1.domain.Permission;
-import io.mifos.identity.api.v1.domain.PermittableGroup;
-import io.mifos.permittedfeignclient.api.v1.client.ApplicationPermissionRequirements;
-import io.mifos.permittedfeignclient.api.v1.domain.ApplicationPermission;
 import io.mifos.provisioner.config.ProvisionerConstants;
 import io.mifos.provisioner.config.SystemProperties;
 import io.mifos.provisioner.internal.listener.IdentityListener;
-import io.mifos.tool.crypto.HashGenerator;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import javax.annotation.Nonnull;
+import org.apache.finearct.cn.permittedfeignclient.api.v1.client.ApplicationPermissionRequirements;
+import org.apache.finearct.cn.permittedfeignclient.api.v1.domain.ApplicationPermission;
+import org.apache.fineract.cn.anubis.api.v1.client.Anubis;
+import org.apache.fineract.cn.anubis.api.v1.domain.AllowedOperation;
+import org.apache.fineract.cn.anubis.api.v1.domain.ApplicationSignatureSet;
+import org.apache.fineract.cn.anubis.api.v1.domain.PermittableEndpoint;
+import org.apache.fineract.cn.api.util.InvalidTokenException;
+import org.apache.fineract.cn.crypto.HashGenerator;
+import org.apache.fineract.cn.identity.api.v1.client.ApplicationPermissionAlreadyExistsException;
+import org.apache.fineract.cn.identity.api.v1.client.CallEndpointSetAlreadyExistsException;
+import org.apache.fineract.cn.identity.api.v1.client.IdentityManager;
+import org.apache.fineract.cn.identity.api.v1.client.PermittableGroupAlreadyExistsException;
+import org.apache.fineract.cn.identity.api.v1.domain.CallEndpointSet;
+import org.apache.fineract.cn.identity.api.v1.domain.Permission;
+import org.apache.fineract.cn.identity.api.v1.domain.PermittableGroup;
+import org.apache.fineract.cn.lang.ServiceException;
+import org.apache.fineract.cn.lang.TenantContextHolder;
+import org.apache.fineract.cn.lang.listening.EventExpectation;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Base64Utils;
-
-import javax.annotation.Nonnull;
-import java.util.*;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * @author Myrle Krantz
@@ -124,7 +131,8 @@ public class IdentityServiceInitializer {
       return new IdentityServiceInitializationResult(signatureSet, encodedPasswordHash);
     } catch (final InvalidTokenException e) {
       logger.warn("The given identity instance didn't recognize the system token as valid.", e);
-      throw ServiceException.conflict("The given identity instance didn't recognize the system token as valid.  " +
+      throw ServiceException
+          .conflict("The given identity instance didn't recognize the system token as valid.  " +
               "Perhaps the system keys for the provisioner or for the identity manager are misconfigured?");
     } catch (final Exception e) {
       logger.error("An unexpected error occured while initializing identity.", e);

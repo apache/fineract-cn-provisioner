@@ -18,14 +18,14 @@
  */
 package io.mifos.provisioner.internal.service.applications;
 
-import io.mifos.anubis.api.v1.client.Anubis;
-import io.mifos.anubis.api.v1.domain.PermittableEndpoint;
-import io.mifos.core.lang.AutoTenantContext;
-import io.mifos.identity.api.v1.client.IdentityManager;
-import io.mifos.identity.api.v1.client.PermittableGroupAlreadyExistsException;
-import io.mifos.identity.api.v1.domain.PermittableGroup;
 import io.mifos.provisioner.config.SystemProperties;
 import io.mifos.provisioner.internal.listener.IdentityListener;
+import org.apache.fineract.cn.anubis.api.v1.client.Anubis;
+import org.apache.fineract.cn.anubis.api.v1.domain.PermittableEndpoint;
+import org.apache.fineract.cn.identity.api.v1.client.IdentityManager;
+import org.apache.fineract.cn.identity.api.v1.client.PermittableGroupAlreadyExistsException;
+import org.apache.fineract.cn.identity.api.v1.domain.PermittableGroup;
+import org.apache.fineract.cn.lang.AutoTenantContext;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;

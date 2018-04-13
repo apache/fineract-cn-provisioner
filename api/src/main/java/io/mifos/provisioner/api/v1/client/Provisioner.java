@@ -18,8 +18,17 @@
  */
 package io.mifos.provisioner.api.v1.client;
 
-import io.mifos.core.api.util.CustomFeignClientsConfiguration;
-import io.mifos.provisioner.api.v1.domain.*;
+import io.mifos.provisioner.api.v1.domain.Application;
+import io.mifos.provisioner.api.v1.domain.AssignedApplication;
+import io.mifos.provisioner.api.v1.domain.AuthenticationResponse;
+import io.mifos.provisioner.api.v1.domain.Client;
+import io.mifos.provisioner.api.v1.domain.IdentityManagerInitialization;
+import io.mifos.provisioner.api.v1.domain.PasswordPolicy;
+import io.mifos.provisioner.api.v1.domain.Tenant;
+import java.util.List;
+import javax.validation.Valid;
+import org.apache.fineract.cn.api.annotation.ThrowsException;
+import org.apache.fineract.cn.api.util.CustomFeignClientsConfiguration;
 import org.springframework.cloud.netflix.feign.FeignClient;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -28,12 +37,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
-
-import java.util.List;
-
-import javax.validation.Valid;
-
-import io.mifos.core.api.annotation.ThrowsException;
 
 /**
  * @author Myrle Krantz

@@ -18,13 +18,12 @@
  */
 package io.mifos.provisioner.config;
 
-import io.mifos.core.lang.security.RsaKeyPairFactory;
-import io.mifos.core.test.domain.ValidationTest;
-import io.mifos.core.test.domain.ValidationTestCase;
-import org.junit.runners.Parameterized;
-
 import java.util.ArrayList;
 import java.util.Collection;
+import org.apache.fineract.cn.lang.security.RsaKeyPairFactory;
+import org.apache.fineract.cn.test.domain.ValidationTest;
+import org.apache.fineract.cn.test.domain.ValidationTestCase;
+import org.junit.runners.Parameterized;
 
 /**
  * @author Myrle Krantz

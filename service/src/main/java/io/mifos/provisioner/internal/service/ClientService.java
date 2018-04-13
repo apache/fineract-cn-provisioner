@@ -21,16 +21,13 @@ package io.mifos.provisioner.internal.service;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.mapping.Mapper;
 import com.datastax.driver.mapping.Result;
-
-import io.mifos.core.cassandra.core.CassandraSessionProvider;
-import io.mifos.core.lang.ServiceException;
 import io.mifos.provisioner.internal.repository.ClientEntity;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.fineract.cn.cassandra.core.CassandraSessionProvider;
+import org.apache.fineract.cn.lang.ServiceException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 @Service
 public class ClientService {

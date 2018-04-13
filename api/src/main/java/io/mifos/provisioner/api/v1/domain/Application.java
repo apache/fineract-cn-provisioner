@@ -18,7 +18,8 @@
  */
 package io.mifos.provisioner.api.v1.domain;
 
-import io.mifos.core.lang.validation.constraints.ValidApplicationName;
+
+import org.apache.fineract.cn.lang.validation.constraints.ValidApplicationName;
 
 @SuppressWarnings({"unused", "WeakerAccess"})
 public class Application {

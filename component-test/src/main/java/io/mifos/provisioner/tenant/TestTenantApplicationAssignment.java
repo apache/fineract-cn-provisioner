@@ -18,36 +18,54 @@
  */
 package io.mifos.provisioner.tenant;
 
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.anyObject;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.when;
+
 import com.google.gson.Gson;
-import io.mifos.anubis.api.v1.client.Anubis;
-import io.mifos.anubis.api.v1.domain.AllowedOperation;
-import io.mifos.anubis.api.v1.domain.ApplicationSignatureSet;
-import io.mifos.anubis.api.v1.domain.PermittableEndpoint;
-import io.mifos.anubis.api.v1.domain.Signature;
-import io.mifos.anubis.test.v1.SystemSecurityEnvironment;
-import io.mifos.core.api.context.AutoSeshat;
-import io.mifos.core.api.util.ApiConstants;
-import io.mifos.core.api.util.ApiFactory;
-import io.mifos.core.lang.AutoTenantContext;
-import io.mifos.core.lang.security.RsaKeyPairFactory;
-import io.mifos.core.test.env.TestEnvironment;
-import io.mifos.identity.api.v1.client.IdentityManager;
-import io.mifos.identity.api.v1.domain.CallEndpointSet;
-import io.mifos.identity.api.v1.domain.Permission;
-import io.mifos.identity.api.v1.domain.PermittableGroup;
-import io.mifos.identity.api.v1.events.ApplicationSignatureEvent;
-import io.mifos.permittedfeignclient.api.v1.client.ApplicationPermissionRequirements;
-import io.mifos.permittedfeignclient.api.v1.domain.ApplicationPermission;
 import io.mifos.provisioner.ProvisionerCassandraInitializer;
 import io.mifos.provisioner.ProvisionerMariaDBInitializer;
 import io.mifos.provisioner.api.v1.client.Provisioner;
-import io.mifos.provisioner.api.v1.domain.*;
+import io.mifos.provisioner.api.v1.domain.Application;
+import io.mifos.provisioner.api.v1.domain.AssignedApplication;
+import io.mifos.provisioner.api.v1.domain.AuthenticationResponse;
+import io.mifos.provisioner.api.v1.domain.IdentityManagerInitialization;
+import io.mifos.provisioner.api.v1.domain.Tenant;
 import io.mifos.provisioner.config.ProvisionerConstants;
 import io.mifos.provisioner.config.ProvisionerServiceConfig;
 import io.mifos.provisioner.internal.listener.IdentityListener;
 import io.mifos.provisioner.internal.service.applications.ApplicationCallContextProvider;
 import io.mifos.provisioner.internal.util.TokenProvider;
-import org.junit.*;
+import java.math.BigInteger;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import org.apache.finearct.cn.permittedfeignclient.api.v1.client.ApplicationPermissionRequirements;
+import org.apache.finearct.cn.permittedfeignclient.api.v1.domain.ApplicationPermission;
+import org.apache.fineract.cn.anubis.api.v1.client.Anubis;
+import org.apache.fineract.cn.anubis.api.v1.domain.AllowedOperation;
+import org.apache.fineract.cn.anubis.api.v1.domain.ApplicationSignatureSet;
+import org.apache.fineract.cn.anubis.api.v1.domain.PermittableEndpoint;
+import org.apache.fineract.cn.anubis.api.v1.domain.Signature;
+import org.apache.fineract.cn.anubis.test.v1.SystemSecurityEnvironment;
+import org.apache.fineract.cn.api.context.AutoSeshat;
+import org.apache.fineract.cn.api.util.ApiConstants;
+import org.apache.fineract.cn.api.util.ApiFactory;
+import org.apache.fineract.cn.identity.api.v1.client.IdentityManager;
+import org.apache.fineract.cn.identity.api.v1.domain.CallEndpointSet;
+import org.apache.fineract.cn.identity.api.v1.domain.Permission;
+import org.apache.fineract.cn.identity.api.v1.domain.PermittableGroup;
+import org.apache.fineract.cn.identity.api.v1.events.ApplicationSignatureEvent;
+import org.apache.fineract.cn.lang.AutoTenantContext;
+import org.apache.fineract.cn.lang.security.RsaKeyPairFactory;
+import org.apache.fineract.cn.test.env.TestEnvironment;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
 import org.junit.rules.RuleChain;
 import org.junit.rules.TestRule;
 import org.junit.runner.RunWith;
@@ -65,14 +83,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-
-import java.math.BigInteger;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.*;
 
 /**
  * @author Myrle Krantz

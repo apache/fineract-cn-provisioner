@@ -18,9 +18,9 @@
  */
 package io.mifos.provisioner;
 
-import io.mifos.core.test.env.TestEnvironment;
 import io.mifos.provisioner.api.v1.client.Provisioner;
 import io.mifos.provisioner.config.ProvisionerServiceConfig;
+import org.apache.fineract.cn.test.env.TestEnvironment;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.rules.RuleChain;

@@ -18,19 +18,18 @@
  */
 package io.mifos.provisioner.security;
 
-import io.mifos.core.api.context.AutoUserContext;
-import io.mifos.core.api.util.ApiConstants;
 import io.mifos.provisioner.AbstractServiceTest;
 import io.mifos.provisioner.api.v1.domain.AuthenticationResponse;
 import io.mifos.provisioner.api.v1.domain.PasswordPolicy;
 import io.mifos.provisioner.config.ProvisionerConstants;
-import org.junit.Assert;
-import org.junit.Test;
-import org.springframework.util.Base64Utils;
-
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import org.apache.fineract.cn.api.context.AutoUserContext;
+import org.apache.fineract.cn.api.util.ApiConstants;
+import org.junit.Assert;
+import org.junit.Test;
+import org.springframework.util.Base64Utils;
 
 /**
  * @author Myrle Krantz
