@@ -42,7 +42,7 @@ dependencies {
             [group: 'org.apache.fineract.cn.provisioner', name: 'service', version: project.version],
             [group: 'org.apache.fineract.cn.anubis', name: 'test', version: versions.frameworkanubis],
             [group: 'org.apache.fineract.cn.anubis', name: 'api', version: versions.frameworkanubis],
-            [group: 'org.apache.fineract.cn.identity', name: 'api', version: versions.mifosidentityservice],
+            [group: 'org.apache.fineract.cn.identity', name: 'api', version: versions.fineractidentityservice],
             [group: 'org.apache.fineract.cn', name: 'api', version: versions.frameworkapi],
             [group: 'org.apache.fineract.cn', name: 'test', version: versions.frameworktest],
             [group: 'org.apache.fineract.cn', name: 'lang', version: versions.frameworklang],

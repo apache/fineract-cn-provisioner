@@ -192,8 +192,8 @@ public class ProvisionerInitializer {
       final BoundStatement clientBoundStatement = session.prepare("INSERT INTO clients (name, description, vendor, homepage) VALUES (?, ?, ?, ?)").bind();
       clientBoundStatement.setString("name", clientId);
       clientBoundStatement.setString("description", "REST Console");
-      clientBoundStatement.setString("vendor", "Mifos Initiative");
-      clientBoundStatement.setString("homepage", "https://mifos.org");
+      clientBoundStatement.setString("vendor", "The Apache Software Foundation");
+      clientBoundStatement.setString("homepage", "https://fineract.apache.org");
       session.execute(clientBoundStatement);
     }
   }

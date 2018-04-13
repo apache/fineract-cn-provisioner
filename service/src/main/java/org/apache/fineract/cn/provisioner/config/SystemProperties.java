@@ -33,7 +33,7 @@ import java.math.BigInteger;
 @ConfigurationProperties(prefix = "system")
 public class SystemProperties {
   @NotEmpty
-  private String domain = "mifos.io";
+  private String domain = "fineract.apache.org";
 
   @Valid
   private final Token token = new Token();
