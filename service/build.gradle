@@ -56,7 +56,7 @@ dependencies {
             [group: 'org.apache.fineract.cn.anubis', name: 'library', version: versions.frameworkanubis],
             [group: 'org.apache.fineract.cn.anubis', name: 'api', version: versions.frameworkanubis],
             [group: 'org.apache.fineract.cn.permitted-feign-client', name: 'api', version: versions.frameworkanput],
-            [group: 'org.apache.fineract.cn.identity', name: 'api', version: versions.mifosidentityservice],
+            [group: 'org.apache.fineract.cn.identity', name: 'api', version: versions.fineractidentityservice],
             [group: 'com.google.code.gson', name: 'gson', version: versions.gson],
             [group: 'org.apache.fineract.cn', name: 'api', version: versions.frameworkapi],
             [group: 'org.apache.fineract.cn', name: 'lang', version: versions.frameworklang],

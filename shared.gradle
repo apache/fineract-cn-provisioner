@@ -19,19 +19,19 @@ group 'org.apache.fineract.cn.provisioner'
 version '0.1.0-BUILD-SNAPSHOT'
 
 ext.versions = [
-        mifosidentityservice : '0.1.0-BUILD-SNAPSHOT',
-        frameworkanubis      : '0.1.0-BUILD-SNAPSHOT',
-        frameworkanput       : '0.1.0-BUILD-SNAPSHOT',
-        frameworkapi         : '0.1.0-BUILD-SNAPSHOT',
-        frameworklang        : '0.1.0-BUILD-SNAPSHOT',
-        frameworkasync       : '0.1.0-BUILD-SNAPSHOT',
-        frameworkcassandra   : '0.1.0-BUILD-SNAPSHOT',
-        frameworkmariadb     : '0.1.0-BUILD-SNAPSHOT',
-        frameworkcrypto      : '0.1.0-BUILD-SNAPSHOT',
-        frameworktest        : '0.1.0-BUILD-SNAPSHOT',
-        springcontext        : '4.3.3.RELEASE',
-        activeMQ             : '5.13.2',
-        validator            : '5.3.0.Final'
+        fineractidentityservice : '0.1.0-BUILD-SNAPSHOT',
+        frameworkanubis         : '0.1.0-BUILD-SNAPSHOT',
+        frameworkanput          : '0.1.0-BUILD-SNAPSHOT',
+        frameworkapi            : '0.1.0-BUILD-SNAPSHOT',
+        frameworklang           : '0.1.0-BUILD-SNAPSHOT',
+        frameworkasync          : '0.1.0-BUILD-SNAPSHOT',
+        frameworkcassandra      : '0.1.0-BUILD-SNAPSHOT',
+        frameworkmariadb        : '0.1.0-BUILD-SNAPSHOT',
+        frameworkcrypto         : '0.1.0-BUILD-SNAPSHOT',
+        frameworktest           : '0.1.0-BUILD-SNAPSHOT',
+        springcontext           : '4.3.3.RELEASE',
+        activeMQ                : '5.13.2',
+        validator               : '5.3.0.Final'
 ]
 
 

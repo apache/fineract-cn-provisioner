@@ -18,7 +18,7 @@
 #
 
 system:
-  domain: mifos.io
+  domain: fineract.apache.org
   dataStoreOption: ALL # possible values ALL, CASSANDRA, RDBMS
   token:
     ttl: 60
