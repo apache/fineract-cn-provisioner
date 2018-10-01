@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.cn.provisioner.client;
 
+import org.apache.commons.lang.RandomStringUtils;
 import org.apache.fineract.cn.provisioner.api.v1.domain.Client;
 
 class Fixture {
@@ -25,11 +26,11 @@ class Fixture {
   private static Client compTestClient = new Client();
 
   static {
-    compTestClient.setName("comp-test");
-    compTestClient.setDescription("Component Test Client");
-    compTestClient.setHomepage("http://www.example.org");
-    compTestClient.setVendor("Component Test");
-    compTestClient.setRedirectUri("http://redirect.me");
+    compTestClient.setName("client-comp-test-" + RandomStringUtils.randomAlphanumeric(5));
+    compTestClient.setDescription("Component Test Client Descr " + RandomStringUtils.randomAlphanumeric(5));
+    compTestClient.setHomepage("http://" + RandomStringUtils.randomAlphanumeric(5) + ".example.org");
+    compTestClient.setVendor("Component Test Vendor " + RandomStringUtils.randomAlphanumeric(5));
+    compTestClient.setRedirectUri("http://" + RandomStringUtils.randomAlphanumeric(5) + ".redirect.me");
   }
 
   private Fixture() {

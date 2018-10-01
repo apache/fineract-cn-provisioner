@@ -19,6 +19,7 @@
 package org.apache.fineract.cn.provisioner.tenant;
 
 
+import org.apache.commons.lang.RandomStringUtils;
 import org.apache.fineract.cn.provisioner.api.v1.domain.CassandraConnectionInfo;
 import org.apache.fineract.cn.provisioner.api.v1.domain.DatabaseConnectionInfo;
 import org.apache.fineract.cn.provisioner.api.v1.domain.Tenant;
@@ -28,12 +29,12 @@ class Fixture {
   static Tenant getCompTestTenant() {
     final Tenant compTestTenant = new Tenant();
     compTestTenant.setIdentifier(TestEnvironment.getRandomTenantName());
-    compTestTenant.setName("Comp Test");
-    compTestTenant.setDescription("Component Test Tenant");
+    compTestTenant.setName("Comp Test " + RandomStringUtils.randomAlphanumeric(4));
+    compTestTenant.setDescription("Component Test Tenant " + RandomStringUtils.randomAlphabetic(4));
 
     final CassandraConnectionInfo cassandraConnectionInfo = new CassandraConnectionInfo();
     compTestTenant.setCassandraConnectionInfo(cassandraConnectionInfo);
-    cassandraConnectionInfo.setClusterName("Test Cluster");
+    cassandraConnectionInfo.setClusterName("Test Cluster" + RandomStringUtils.randomAlphabetic(3));
     cassandraConnectionInfo.setContactPoints("127.0.0.1:9142");
     cassandraConnectionInfo.setKeyspace(compTestTenant.getIdentifier());
     cassandraConnectionInfo.setReplicas("3");
