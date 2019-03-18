@@ -39,7 +39,7 @@ public class DataSourceUtils {
       throw new IllegalArgumentException(cnfex.getMessage(), cnfex);
     }
     final String jdbcUrl = JdbcUrlBuilder
-        .create(JdbcUrlBuilder.DatabaseType.MARIADB)
+        .create(JdbcUrlBuilder.DatabaseType.POSTGRESQL)
         .host(databaseConnectionInfo.getHost())
         .port(databaseConnectionInfo.getPort())
         .build();
@@ -54,11 +54,11 @@ public class DataSourceUtils {
 
   public static Connection createProvisionerConnection(final Environment environment) {
     final DatabaseConnectionInfo databaseConnectionInfo = new DatabaseConnectionInfo();
-    databaseConnectionInfo.setDriverClass(environment.getProperty("mariadb.driverClass"));
-    databaseConnectionInfo.setHost(environment.getProperty("mariadb.host"));
-    databaseConnectionInfo.setPort(environment.getProperty("mariadb.port"));
-    databaseConnectionInfo.setUser(environment.getProperty("mariadb.user"));
-    databaseConnectionInfo.setPassword(environment.getProperty("mariadb.password"));
+    databaseConnectionInfo.setDriverClass(environment.getProperty("postgresql.driverClass"));
+    databaseConnectionInfo.setHost(environment.getProperty("postgresql.host"));
+    databaseConnectionInfo.setPort(environment.getProperty("postgresql.port"));
+    databaseConnectionInfo.setUser(environment.getProperty("postgresql.user"));
+    databaseConnectionInfo.setPassword(environment.getProperty("postgresql.password"));
     final Connection connection = DataSourceUtils.create(databaseConnectionInfo);
     try {
       connection.setAutoCommit(false);

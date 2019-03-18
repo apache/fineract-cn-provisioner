@@ -21,7 +21,7 @@ package org.apache.fineract.cn.provisioner.internal.util;
 final class JdbcUrlBuilder {
 
   enum DatabaseType {
-    MARIADB("jdbc:mariadb://");
+    POSTGRESQL("jdbc:postgresql:");
 
     private final String prefix;
 
@@ -65,7 +65,7 @@ final class JdbcUrlBuilder {
 
   String build() {
     switch (this.type) {
-      case MARIADB:
+      case POSTGRESQL:
         return this.type.prefix()
             + this.host + ":"
             + this.port

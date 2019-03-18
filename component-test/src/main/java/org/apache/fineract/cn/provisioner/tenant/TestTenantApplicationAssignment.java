@@ -25,7 +25,7 @@ import static org.mockito.Mockito.when;
 
 import com.google.gson.Gson;
 import org.apache.fineract.cn.provisioner.ProvisionerCassandraInitializer;
-import org.apache.fineract.cn.provisioner.ProvisionerMariaDBInitializer;
+import org.apache.fineract.cn.provisioner.ProvisionerPostgreSQLInitializer;
 import org.apache.fineract.cn.provisioner.api.v1.client.Provisioner;
 import org.apache.fineract.cn.provisioner.api.v1.domain.Application;
 import org.apache.fineract.cn.provisioner.api.v1.domain.AssignedApplication;
@@ -124,7 +124,7 @@ public class TestTenantApplicationAssignment {
 
 
   private static TestEnvironment testEnvironment = new TestEnvironment(APP_NAME);
-  private static ProvisionerMariaDBInitializer mariaDBInitializer = new ProvisionerMariaDBInitializer();
+  private static ProvisionerPostgreSQLInitializer postgreSQLInitializer = new ProvisionerPostgreSQLInitializer();
   private static ProvisionerCassandraInitializer cassandraInitializer = new ProvisionerCassandraInitializer();
   private static SystemSecurityEnvironment systemSecurityEnvironment
           = new SystemSecurityEnvironment(testEnvironment.getSystemKeyTimestamp(), testEnvironment.getSystemPublicKey(), testEnvironment.getSystemPrivateKey());
@@ -132,7 +132,7 @@ public class TestTenantApplicationAssignment {
   @ClassRule
   public static TestRule orderClassRules = RuleChain
           .outerRule(testEnvironment)
-          .around(mariaDBInitializer)
+          .around(postgreSQLInitializer)
           .around(cassandraInitializer);
 
   @SuppressWarnings("SpringAutowiredFieldsWarningInspection")

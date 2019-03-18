@@ -29,7 +29,7 @@ import org.apache.fineract.cn.cassandra.config.EnableCassandra;
 import org.apache.fineract.cn.crypto.config.EnableCrypto;
 import org.apache.fineract.cn.lang.config.EnableApplicationName;
 import org.apache.fineract.cn.lang.config.EnableServiceException;
-import org.apache.fineract.cn.mariadb.config.EnableMariaDB;
+import org.apache.fineract.cn.postgresql.config.EnablePostgreSQL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -55,7 +55,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter
 @EnableCrypto
 @EnableAsync
 @EnableAnubis(provideSignatureRestController = false)
-@EnableMariaDB
+@EnablePostgreSQL
 @EnableCassandra
 @EnableServiceException
 @EnableApplicationName

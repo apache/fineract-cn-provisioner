@@ -50,7 +50,8 @@ dependencies {
             [group: 'org.apache.fineract.cn', name: 'lang', version: versions.frameworklang],
             [group: 'org.springframework.boot', name: 'spring-boot-starter-test'],
             [group: 'org.springframework.restdocs', name: 'spring-restdocs-mockmvc'],
-            [group: 'junit', name: 'junit', version: '4.12']
+            [group: 'junit', name: 'junit', version: '4.12'],
+            [group: 'com.opentable.components', name: 'otj-pg-embedded', version: '0.7.1']
     )
 }
 

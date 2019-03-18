@@ -37,7 +37,7 @@ import org.apache.fineract.cn.cassandra.core.CassandraSessionProvider;
 import org.apache.fineract.cn.cassandra.util.CassandraConnectorConstants;
 import org.apache.fineract.cn.crypto.HashGenerator;
 import org.apache.fineract.cn.crypto.SaltGenerator;
-import org.apache.fineract.cn.mariadb.util.MariaDBConstants;
+import org.apache.fineract.cn.postgresql.util.PostgreSQLConstants;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -58,7 +58,7 @@ public class ProvisionerInitializer {
   private final HashGenerator hashGenerator;
   private final String initialClientId;
   private String metaKeySpaceName;
-  private String mariaDBName;
+  private String postgreSQLName;
 
   @Autowired
   public ProvisionerInitializer(final Environment environment, @Qualifier(ProvisionerConstants.LOGGER_NAME) final Logger logger,
@@ -80,9 +80,9 @@ public class ProvisionerInitializer {
       metaKeySpaceName = this.environment.getProperty(
           CassandraConnectorConstants.KEYSPACE_PROP,
           CassandraConnectorConstants.KEYSPACE_PROP_DEFAULT);
-      mariaDBName = this.environment.getProperty(
-          MariaDBConstants.MARIADB_DATABASE_NAME_PROP,
-          MariaDBConstants.MARIADB_DATABASE_NAME_DEFAULT);
+      postgreSQLName = this.environment.getProperty(
+          PostgreSQLConstants.POSTGRESQL_DATABASE_NAME_PROP,
+          PostgreSQLConstants.POSTGRESQL_DATABASE_NAME_DEFAULT);
 
       this.initializeCassandra();
       this.initializeDatabase();
@@ -202,8 +202,8 @@ public class ProvisionerInitializer {
     final Connection connection = DataSourceUtils.createProvisionerConnection(this.environment);
     try (final Statement statement = connection.createStatement()) {
       // create meta data database
-      statement.execute("CREATE DATABASE IF NOT EXISTS " + mariaDBName);
-      statement.execute("USE " + mariaDBName);
+      statement.execute("CREATE DATABASE IF NOT EXISTS " + postgreSQLName);
+      statement.execute("USE " + postgreSQLName);
       // create tenants table
       statement.execute("CREATE TABLE IF NOT EXISTS tenants (" +
           "  identifier    VARCHAR(32) NOT NULL," +

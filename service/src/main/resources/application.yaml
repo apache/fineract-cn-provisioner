@@ -37,10 +37,10 @@ cassandra:
       type: Network
       replicas: datacenter1:3
 
-mariadb:
-  driverClass: org.mariadb.jdbc.Driver
+postgresql:
+  driverClass: org.postgresql.Driver
   database: seshat
   host: localhost
-  port: 3306
-  user: root
-  password: mysql
+  port: 5432
+  user: postgres
+  password: postgres
