@@ -19,6 +19,7 @@
 package org.apache.fineract.cn.provisioner.internal.util;
 
 import org.springframework.core.env.Environment;
+import org.apache.fineract.cn.postgresql.util.JdbcUrlBuilder;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -42,10 +43,16 @@ public class DataSourceUtils {
         .create(JdbcUrlBuilder.DatabaseType.POSTGRESQL)
         .host(databaseConnectionInfo.getHost())
         .port(databaseConnectionInfo.getPort())
+        .instanceName(databaseConnectionInfo.getDatabaseName())
         .build();
     try {
+      try {
+        Class.forName("org.postgresql.Driver");
+      } catch (ClassNotFoundException e) {
+        e.printStackTrace();
+      }
       final Connection connection = DriverManager.getConnection(jdbcUrl, databaseConnectionInfo.getUser(), databaseConnectionInfo.getPassword());
-      connection.setAutoCommit(false);
+      connection.setAutoCommit(true);
       return connection;
     } catch (SQLException sqlex) {
       throw new IllegalStateException(sqlex.getMessage(), sqlex);
@@ -55,13 +62,14 @@ public class DataSourceUtils {
   public static Connection createProvisionerConnection(final Environment environment) {
     final DatabaseConnectionInfo databaseConnectionInfo = new DatabaseConnectionInfo();
     databaseConnectionInfo.setDriverClass(environment.getProperty("postgresql.driverClass"));
+    databaseConnectionInfo.setDatabaseName(environment.getProperty("postgresql.database"));
     databaseConnectionInfo.setHost(environment.getProperty("postgresql.host"));
     databaseConnectionInfo.setPort(environment.getProperty("postgresql.port"));
     databaseConnectionInfo.setUser(environment.getProperty("postgresql.user"));
     databaseConnectionInfo.setPassword(environment.getProperty("postgresql.password"));
     final Connection connection = DataSourceUtils.create(databaseConnectionInfo);
     try {
-      connection.setAutoCommit(false);
+      connection.setAutoCommit(true);
     } catch (SQLException e) {
       // do nothing
     }

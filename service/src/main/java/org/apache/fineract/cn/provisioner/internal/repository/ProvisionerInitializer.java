@@ -26,7 +26,7 @@ import org.apache.fineract.cn.provisioner.config.ProvisionerConstants;
 import org.apache.fineract.cn.provisioner.internal.util.DataSourceUtils;
 import java.nio.ByteBuffer;
 import java.sql.Connection;
-import java.sql.SQLException;
+import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.Date;
 import java.util.UUID;
@@ -58,7 +58,7 @@ public class ProvisionerInitializer {
   private final HashGenerator hashGenerator;
   private final String initialClientId;
   private String metaKeySpaceName;
-  private String postgreSQLName;
+  private String postgresDbName;
 
   @Autowired
   public ProvisionerInitializer(final Environment environment, @Qualifier(ProvisionerConstants.LOGGER_NAME) final Logger logger,
@@ -80,7 +80,7 @@ public class ProvisionerInitializer {
       metaKeySpaceName = this.environment.getProperty(
           CassandraConnectorConstants.KEYSPACE_PROP,
           CassandraConnectorConstants.KEYSPACE_PROP_DEFAULT);
-      postgreSQLName = this.environment.getProperty(
+      postgresDbName = this.environment.getProperty(
           PostgreSQLConstants.POSTGRESQL_DATABASE_NAME_PROP,
           PostgreSQLConstants.POSTGRESQL_DATABASE_NAME_DEFAULT);
 
@@ -199,27 +199,34 @@ public class ProvisionerInitializer {
   }
 
   private void initializeDatabase() throws Exception {
-    final Connection connection = DataSourceUtils.createProvisionerConnection(this.environment);
-    try (final Statement statement = connection.createStatement()) {
-      // create meta data database
-      statement.execute("CREATE DATABASE IF NOT EXISTS " + postgreSQLName);
-      statement.execute("USE " + postgreSQLName);
-      // create tenants table
-      statement.execute("CREATE TABLE IF NOT EXISTS tenants (" +
-          "  identifier    VARCHAR(32) NOT NULL," +
-          "  driver_class  VARCHAR(255) NOT NULL," +
-          "  database_name VARCHAR(32) NOT NULL," +
-          "  host          VARCHAR(512) NOT NULL," +
-          "  port          VARCHAR(5)  NOT NULL," +
-          "  a_user        VARCHAR(32) NOT NULL," +
-          "  pwd           VARCHAR(32) NOT NULL," +
-          "  PRIMARY KEY (identifier)" +
-          ")");
-      connection.commit();
-    } catch (final SQLException sqlex) {
-      throw new IllegalStateException(sqlex.getMessage(), sqlex);
-    } finally {
-      connection.close();
+    try (
+            final Connection connection = DataSourceUtils.createProvisionerConnection(this.environment);
+            final Statement statement = connection.createStatement()
+    ) {
+        final ResultSet findDB = statement.executeQuery("SELECT datname FROM pg_database WHERE datname = '" + postgresDbName + "'");
+        if (!findDB.next()) {
+          this.logger.info("Database {} does not exists, creating database now.", postgresDbName);
+          statement.execute("CREATE DATABASE " + postgresDbName);
+        } else {
+          this.logger.info("Database {} does exists.", postgresDbName);
+        }
+
+      try (
+              final Connection metaConnection = DataSourceUtils.createProvisionerConnection(this.environment);
+              final Statement metaStatement = metaConnection.createStatement()
+      ) {
+        this.logger.info("Create tenants table if not exists");
+        metaStatement.execute("CREATE TABLE IF NOT EXISTS tenants (" +
+                "  identifier    VARCHAR(32) NOT NULL," +
+                "  driver_class  VARCHAR(255) NOT NULL," +
+                "  database_name VARCHAR(32) NOT NULL," +
+                "  host          VARCHAR(512) NOT NULL," +
+                "  port          VARCHAR(5)  NOT NULL," +
+                "  a_user        VARCHAR(32) NOT NULL," +
+                "  pwd           VARCHAR(32) NOT NULL," +
+                "  PRIMARY KEY (identifier)" +
+                ")");
+      }
     }
   }
 }
