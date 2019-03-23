@@ -205,17 +205,17 @@ public class ProvisionerInitializer {
     ) {
         final ResultSet findDB = statement.executeQuery("SELECT datname FROM pg_database WHERE datname = '" + postgresDbName + "'");
         if (!findDB.next()) {
-          this.logger.info("Database {} does not exists, creating database now.", postgresDbName);
+          this.logger.info("Database {} does not exists, creating the database now.", postgresDbName);
           statement.execute("CREATE DATABASE " + postgresDbName);
         } else {
-          this.logger.info("Database {} does exists.", postgresDbName);
+          this.logger.info("Sorry, Database {} does exists.", postgresDbName);
         }
 
       try (
               final Connection metaConnection = DataSourceUtils.createProvisionerConnection(this.environment);
               final Statement metaStatement = metaConnection.createStatement()
       ) {
-        this.logger.info("Create tenants table if not exists");
+        this.logger.info("Create tenants table if it not exists");
         metaStatement.execute("CREATE TABLE IF NOT EXISTS tenants (" +
                 "  identifier    VARCHAR(32) NOT NULL," +
                 "  driver_class  VARCHAR(255) NOT NULL," +
