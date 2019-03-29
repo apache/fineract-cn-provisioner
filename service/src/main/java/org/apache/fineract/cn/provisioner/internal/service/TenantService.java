@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.cn.provisioner.internal.service;
 
+import org.apache.fineract.cn.postgresql.util.PostgreSQLConstants;
 import org.apache.fineract.cn.provisioner.api.v1.domain.CassandraConnectionInfo;
 import org.apache.fineract.cn.provisioner.api.v1.domain.DatabaseConnectionInfo;
 import org.apache.fineract.cn.provisioner.api.v1.domain.Tenant;
@@ -30,6 +31,7 @@ import org.apache.fineract.cn.provisioner.internal.service.applications.Identity
 import org.apache.fineract.cn.provisioner.internal.util.DataSourceUtils;
 import org.apache.fineract.cn.provisioner.internal.util.DataStoreOption;
 import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
@@ -49,7 +51,7 @@ import org.springframework.stereotype.Component;
 @SuppressWarnings({"SqlNoDataSourceInspection", "SqlDialectInspection"})
 @Component
 public class TenantService {
-  private static final String META_KEYSPACE = "seshat"; //TODO: read MariaDB name from the configuration.
+  private static final String META_KEYSPACE = PostgreSQLConstants.POSTGRESQL_DATABASE_NAME_DEFAULT;
 
   private final Logger logger;
   private final Environment environment;
@@ -165,7 +167,7 @@ public class TenantService {
     final DataStoreOption dataStoreOption = provisionerProperties.getDataStoreOption();
     if (dataStoreOption.isEnabled(DataStoreOption.RDBMS)) {
       if (tenants.size() > 0) {
-        try (final Connection connection = DataSourceUtils.createProvisionerConnection(this.environment)) {
+        try (final Connection connection = DataSourceUtils.createProvisionerConnection(this.environment, META_KEYSPACE)) {
           for (final Tenant tenant : tenants) {
             final Optional<TenantDAO> optionalTenantDAO = TenantDAO.find(connection, tenant.getIdentifier());
             optionalTenantDAO.ifPresent(tenantDAO -> tenant.setDatabaseConnectionInfo(tenantDAO.map()));
@@ -175,7 +177,7 @@ public class TenantService {
           throw new IllegalStateException("Could not load org.apache.fineract.cn.provisioner.tenant data!");
         }
       } else {
-        try (final Connection connection = DataSourceUtils.createProvisionerConnection(this.environment)) {
+        try (final Connection connection = DataSourceUtils.createProvisionerConnection(this.environment, META_KEYSPACE)) {
           final List<TenantDAO> tenantDAOs = TenantDAO.fetchAll(connection);
           for (final TenantDAO tenantDAO : tenantDAOs) {
             final Tenant tenant = new Tenant();
@@ -210,7 +212,7 @@ public class TenantService {
   private Tenant findInDatabase(final @Nonnull Tenant tenant, final @Nonnull String identifier) {
     final DataStoreOption dataStoreOption = provisionerProperties.getDataStoreOption();
     if (dataStoreOption.isEnabled(DataStoreOption.RDBMS)) {
-      try (final Connection connection = DataSourceUtils.createProvisionerConnection(this.environment)) {
+      try (final Connection connection = DataSourceUtils.createProvisionerConnection(this.environment, META_KEYSPACE)) {
         final Optional<TenantDAO> optionalTenantDAO = TenantDAO.find(connection, identifier);
         if (optionalTenantDAO.isPresent()) {
           tenant.setDatabaseConnectionInfo(optionalTenantDAO.get().map());
@@ -229,45 +231,36 @@ public class TenantService {
     if (dataStoreOption.isEnabled(DataStoreOption.RDBMS)) {
 
       try (
-              final Connection provisionerConnection = DataSourceUtils.createProvisionerConnection(this.environment);
+              final Connection provisionerConnection = DataSourceUtils.createProvisionerConnection(this.environment, META_KEYSPACE);
               final Statement statement = provisionerConnection.createStatement()
       ) {
-        final java.sql.ResultSet resultSet = statement.executeQuery(
-            " SELECT * FROM " + META_KEYSPACE + ".tenants WHERE identifier = '" + tenant.getIdentifier() + "' ");
+        final ResultSet resultSet = statement.executeQuery(
+            " SELECT * FROM tenants WHERE identifier = '" + tenant.getIdentifier() + "' ");
         if (resultSet.next()) {
+          this.logger.warn("Tenant {} already exists !", tenant.getIdentifier());
           throw ServiceException.conflict("Tenant {0} already exists!", tenant.getIdentifier());
+        }
+        else {
+          final DatabaseConnectionInfo databaseConnectionInfo = tenant.getDatabaseConnectionInfo();
+          this.logger.info("Create database for tenant {}", tenant.getIdentifier());
+          statement.execute("CREATE DATABASE " + databaseConnectionInfo.getDatabaseName().toLowerCase());
+
+          final TenantDAO tenantDAO = new TenantDAO();
+          tenantDAO.setIdentifier(tenant.getIdentifier());
+          tenantDAO.setDriverClass(databaseConnectionInfo.getDriverClass());
+          tenantDAO.setDatabaseName(databaseConnectionInfo.getDatabaseName());
+          tenantDAO.setHost(databaseConnectionInfo.getHost());
+          tenantDAO.setPort(databaseConnectionInfo.getPort());
+          tenantDAO.setUser(databaseConnectionInfo.getUser());
+          tenantDAO.setPassword(databaseConnectionInfo.getPassword());
+          tenantDAO.insert(provisionerConnection);
         }
       } catch (SQLException sqlex) {
         this.logger.error(sqlex.getMessage(), sqlex);
-        throw new IllegalStateException("Could not insert org.apache.fineract.cn.provisioner.tenant info!", sqlex);
+        throw new IllegalStateException("Could not provision database for tenant {}" + tenant.getIdentifier(), sqlex);
       }
-      final DatabaseConnectionInfo databaseConnectionInfo = tenant.getDatabaseConnectionInfo();
-      try (
-          final Connection connection = DataSourceUtils.create(databaseConnectionInfo);
-          final Statement statement = connection.createStatement()
-      ) {
-        statement.execute("CREATE DATABASE IF NOT EXISTS " + databaseConnectionInfo.getDatabaseName());
-        statement.close();
-      } catch (final SQLException sqlex) {
-        this.logger.error(sqlex.getMessage(), sqlex);
-        throw new IllegalStateException("Could not create database!", sqlex);
-      }
-
-      try (final Connection provisionerConnection = DataSourceUtils.createProvisionerConnection(this.environment)) {
-        final TenantDAO tenantDAO = new TenantDAO();
-        tenantDAO.setIdentifier(tenant.getIdentifier());
-        tenantDAO.setDriverClass(databaseConnectionInfo.getDriverClass());
-        tenantDAO.setDatabaseName(databaseConnectionInfo.getDatabaseName());
-        tenantDAO.setHost(databaseConnectionInfo.getHost());
-        tenantDAO.setPort(databaseConnectionInfo.getPort());
-        tenantDAO.setUser(databaseConnectionInfo.getUser());
-        tenantDAO.setPassword(databaseConnectionInfo.getPassword());
-        tenantDAO.insert(provisionerConnection);
-        provisionerConnection.commit();
-      } catch (SQLException sqlex) {
-        this.logger.error(sqlex.getMessage(), sqlex);
-        throw new IllegalStateException("Could not insert org.apache.fineract.cn.provisioner.tenant info!", sqlex);
-      }
+    } else {
+      this.logger.warn("Datastore option not chosen, Tenant in PostgreSQL RDBMS not created");
     }
   }
 
@@ -286,8 +279,7 @@ public class TenantService {
   private void deleteDatabase(final String identifier) {
     final DataStoreOption dataStoreOption = provisionerProperties.getDataStoreOption();
     if (dataStoreOption.isEnabled(DataStoreOption.RDBMS)) {
-
-      try (final Connection provisionerConnection = DataSourceUtils.createProvisionerConnection(this.environment)) {
+      try (final Connection provisionerConnection = DataSourceUtils.createProvisionerConnection(this.environment, META_KEYSPACE)) {
         final Optional<TenantDAO> optionalTenantDAO = TenantDAO.find(provisionerConnection, identifier);
         if (optionalTenantDAO.isPresent()) {
           final DatabaseConnectionInfo databaseConnectionInfo = optionalTenantDAO.get().map();
@@ -296,15 +288,15 @@ public class TenantService {
               final Statement dropStatement = connection.createStatement()
           ) {
             dropStatement.execute("DROP DATABASE " + databaseConnectionInfo.getDatabaseName());
-            connection.commit();
           }
           TenantDAO.delete(provisionerConnection, identifier);
-          provisionerConnection.commit();
         }
       } catch (final SQLException sqlex) {
         this.logger.error(sqlex.getMessage(), sqlex);
-        throw new IllegalStateException("Could not delete database!");
+        throw new IllegalStateException("Could not delete database {}!" + identifier);
       }
+    } else {
+      this.logger.warn("Datastore option not chosen, Tenant in PostgreSQL RDBMS not created");
     }
   }
 

@@ -59,10 +59,10 @@ public class DataSourceUtils {
     }
   }
 
-  public static Connection createProvisionerConnection(final Environment environment) {
+  public static Connection createProvisionerConnection(final Environment environment, String databaseName) {
     final DatabaseConnectionInfo databaseConnectionInfo = new DatabaseConnectionInfo();
     databaseConnectionInfo.setDriverClass(environment.getProperty("postgresql.driverClass"));
-    databaseConnectionInfo.setDatabaseName(environment.getProperty("postgresql.database"));
+    databaseConnectionInfo.setDatabaseName(environment.getProperty(databaseName));
     databaseConnectionInfo.setHost(environment.getProperty("postgresql.host"));
     databaseConnectionInfo.setPort(environment.getProperty("postgresql.port"));
     databaseConnectionInfo.setUser(environment.getProperty("postgresql.user"));

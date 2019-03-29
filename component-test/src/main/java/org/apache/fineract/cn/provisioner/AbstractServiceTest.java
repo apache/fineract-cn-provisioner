@@ -59,7 +59,6 @@ public class AbstractServiceTest {
     }
   }
 
-
   private static TestEnvironment testEnvironment = new TestEnvironment(APP_NAME);
   private static ProvisionerPostgreSQLInitializer postgreSQLInitializer = new ProvisionerPostgreSQLInitializer();
   private static ProvisionerCassandraInitializer cassandraInitializer = new ProvisionerCassandraInitializer();

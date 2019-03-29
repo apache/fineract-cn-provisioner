@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.cn.provisioner.internal.repository;
 
+import org.apache.fineract.cn.postgresql.util.PostgreSQLConstants;
 import org.apache.fineract.cn.provisioner.api.v1.domain.DatabaseConnectionInfo;
 
 import java.sql.Connection;
@@ -83,28 +84,13 @@ public class TenantDAO {
   private static final int INDEX_PASSWORD = 7;
 
   private static final String TABLE_NAME = "tenants";
-  private static final String META_KEYSPACE = "seshat"; //TODO: read MariaDB name from the configuration.
-  private static final String FETCH_ALL_STMT = " SELECT * FROM " +
-      META_KEYSPACE +
-      "." +
-      TenantDAO.TABLE_NAME;
-  private static final String FIND_ONE_STMT = " SELECT * FROM " +
-      META_KEYSPACE +
-      "." +
-      TenantDAO.TABLE_NAME +
-      " WHERE identifier = ?";
-  private static final String INSERT_STMT = " INSERT INTO " +
-      META_KEYSPACE +
-      "." +
-      TenantDAO.TABLE_NAME +
+  private static final String FETCH_ALL_STMT = " SELECT * FROM " + TenantDAO.TABLE_NAME;
+  private static final String FIND_ONE_STMT = " SELECT * FROM " + TenantDAO.TABLE_NAME + " WHERE identifier = ?";
+  private static final String INSERT_STMT = " INSERT INTO " + TenantDAO.TABLE_NAME +
       " (identifier, driver_class, database_name, host, port, a_user, pwd) " +
       " values " +
       " (?, ?, ?, ?, ?, ?, ?) ";
-  private static final String DELETE_STMT = " DELETE FROM " +
-      META_KEYSPACE +
-      "." +
-      TenantDAO.TABLE_NAME +
-      " WHERE identifier = ? ";
+  private static final String DELETE_STMT = " DELETE FROM " + TenantDAO.TABLE_NAME + " WHERE identifier = ? ";
 
   private String identifier;
   private String driverClass;

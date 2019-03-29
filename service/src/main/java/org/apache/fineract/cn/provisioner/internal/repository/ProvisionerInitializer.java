@@ -27,6 +27,7 @@ import org.apache.fineract.cn.provisioner.internal.util.DataSourceUtils;
 import java.nio.ByteBuffer;
 import java.sql.Connection;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Date;
 import java.util.UUID;
@@ -58,7 +59,6 @@ public class ProvisionerInitializer {
   private final HashGenerator hashGenerator;
   private final String initialClientId;
   private String metaKeySpaceName;
-  private String postgresDbName;
 
   @Autowired
   public ProvisionerInitializer(final Environment environment, @Qualifier(ProvisionerConstants.LOGGER_NAME) final Logger logger,
@@ -80,12 +80,10 @@ public class ProvisionerInitializer {
       metaKeySpaceName = this.environment.getProperty(
           CassandraConnectorConstants.KEYSPACE_PROP,
           CassandraConnectorConstants.KEYSPACE_PROP_DEFAULT);
-      postgresDbName = this.environment.getProperty(
-          PostgreSQLConstants.POSTGRESQL_DATABASE_NAME_PROP,
-          PostgreSQLConstants.POSTGRESQL_DATABASE_NAME_DEFAULT);
 
       this.initializeCassandra();
-      this.initializeDatabase();
+      this.initializeDatabase(PostgreSQLConstants.POSTGRESQL_DATABASE_NAME_DEFAULT);
+      //this.initializeDatabase("playground");
     } catch (final Exception ex) {
       throw new IllegalStateException("Could not initialize service!", ex);
     }
@@ -198,9 +196,11 @@ public class ProvisionerInitializer {
     }
   }
 
-  private void initializeDatabase() throws Exception {
+  private void initializeDatabase(String postgresDbName) throws Exception {
+
+    this.logger.info("Creating meta database {} ", postgresDbName);
     try (
-            final Connection connection = DataSourceUtils.createProvisionerConnection(this.environment);
+            final Connection connection = DataSourceUtils.createProvisionerConnection(this.environment, postgresDbName);
             final Statement statement = connection.createStatement()
     ) {
         final ResultSet findDB = statement.executeQuery("SELECT datname FROM pg_database WHERE datname = '" + postgresDbName + "'");
@@ -212,21 +212,25 @@ public class ProvisionerInitializer {
         }
 
       try (
-              final Connection metaConnection = DataSourceUtils.createProvisionerConnection(this.environment);
-              final Statement metaStatement = metaConnection.createStatement()
+           final Connection metaConnection = DataSourceUtils.createProvisionerConnection(this.environment, postgresDbName);
+           final Statement metaStatement = metaConnection.createStatement()
       ) {
-        this.logger.info("Create tenants table if it not exists");
-        metaStatement.execute("CREATE TABLE IF NOT EXISTS tenants (" +
-                "  identifier    VARCHAR(32) NOT NULL," +
-                "  driver_class  VARCHAR(255) NOT NULL," +
-                "  database_name VARCHAR(32) NOT NULL," +
-                "  host          VARCHAR(512) NOT NULL," +
-                "  port          VARCHAR(5)  NOT NULL," +
-                "  a_user        VARCHAR(32) NOT NULL," +
-                "  pwd           VARCHAR(32) NOT NULL," +
-                "  PRIMARY KEY (identifier)" +
-                ")");
+        this.createTableTenants(metaStatement, postgresDbName);
       }
     }
+  }
+
+  private void createTableTenants(final Statement statement, final String databaseName) throws SQLException {
+    this.logger.info("Create tenants table if it does not exists");
+    statement.execute("CREATE TABLE IF NOT EXISTS tenants (" +
+            "  identifier    VARCHAR(32) NOT NULL," +
+            "  driver_class  VARCHAR(255) NOT NULL," +
+            "  database_name VARCHAR(32) NOT NULL," +
+            "  host          VARCHAR(512) NOT NULL," +
+            "  port          VARCHAR(5)  NOT NULL," +
+            "  a_user        VARCHAR(32) NOT NULL," +
+            "  pwd           VARCHAR(32) NOT NULL," +
+            "  PRIMARY KEY (identifier)" +
+            ")");
   }
 }
