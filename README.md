@@ -1,4 +1,4 @@
-# Apache Fineract CN Provisioner
+# Apache Fineract CN Provisioner [![Build Status](https://api.travis-ci.com/apache/fineract-cn-provisioner.svg?branch=develop)](https://travis-ci.com/apache/fineract-cn-provisioner)
 
 This service provisions services for tenants of an Apache Fineract CN installation.
 
