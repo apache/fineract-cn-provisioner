@@ -67,12 +67,13 @@ public class DataSourceUtils {
     databaseConnectionInfo.setPort(environment.getProperty("postgresql.port"));
     databaseConnectionInfo.setUser(environment.getProperty("postgresql.user"));
     databaseConnectionInfo.setPassword(environment.getProperty("postgresql.password"));
-    final Connection connection = DataSourceUtils.create(databaseConnectionInfo);
+
     try {
+      final Connection connection = DataSourceUtils.create(databaseConnectionInfo);
       connection.setAutoCommit(true);
-    } catch (SQLException e) {
-      // do nothing
+      return connection;
+    } catch (SQLException error) {
+      throw new IllegalStateException(error.getMessage(), error);
     }
-    return connection;
   }
 }

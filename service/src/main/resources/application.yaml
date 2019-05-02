@@ -48,7 +48,6 @@ postgresql:
 spring:
   datasource:
     driver-class-name: org.postgresql.Driver
-    platform: postgres
     url: jdbc:postgresql://localhost:5432/seshat
     username: postgres
     password: postgres
