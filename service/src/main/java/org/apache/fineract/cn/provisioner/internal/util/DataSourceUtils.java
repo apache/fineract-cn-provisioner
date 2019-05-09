@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.cn.provisioner.internal.util;
 
+import org.apache.fineract.cn.postgresql.util.PostgreSQLConstants;
 import org.springframework.core.env.Environment;
 import org.apache.fineract.cn.postgresql.util.JdbcUrlBuilder;
 
@@ -39,6 +40,7 @@ public class DataSourceUtils {
     } catch (ClassNotFoundException cnfex) {
       throw new IllegalArgumentException(cnfex.getMessage(), cnfex);
     }
+
     final String jdbcUrl = JdbcUrlBuilder
         .create(JdbcUrlBuilder.DatabaseType.POSTGRESQL)
         .host(databaseConnectionInfo.getHost())
@@ -62,7 +64,9 @@ public class DataSourceUtils {
   public static Connection createProvisionerConnection(final Environment environment, String databaseName) {
     final DatabaseConnectionInfo databaseConnectionInfo = new DatabaseConnectionInfo();
     databaseConnectionInfo.setDriverClass(environment.getProperty("postgresql.driverClass"));
-    databaseConnectionInfo.setDatabaseName(environment.getProperty(databaseName));
+    databaseName = databaseName.equals(PostgreSQLConstants.POSTGRESQL_DATABASE_NAME_DEFAULT) ? PostgreSQLConstants.POSTGRESQL_DATABASE_NAME_DEFAULT :
+            (databaseName.equals("playground") ? "playground" : "postgres");
+    databaseConnectionInfo.setDatabaseName(databaseName);
     databaseConnectionInfo.setHost(environment.getProperty("postgresql.host"));
     databaseConnectionInfo.setPort(environment.getProperty("postgresql.port"));
     databaseConnectionInfo.setUser(environment.getProperty("postgresql.user"));

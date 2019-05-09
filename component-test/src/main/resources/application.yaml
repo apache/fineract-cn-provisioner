@@ -27,3 +27,10 @@ system:
 activemq:
   brokerUrl: vm://localhost?broker.persistent=false
   concurrency: 3-10
+
+spring:
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5432/seshat
+    username: postgres
+    password: postgres
