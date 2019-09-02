@@ -18,27 +18,32 @@
  */
 package org.apache.fineract.cn.provisioner;
 
-import ch.vorburger.exec.ManagedProcessException;
-import ch.vorburger.mariadb4j.DB;
+import com.opentable.db.postgres.embedded.EmbeddedPostgres;
 import org.junit.rules.ExternalResource;
+
+import java.io.IOException;
 
 /**
  * @author Myrle Krantz
  */
-public class ProvisionerMariaDBInitializer extends ExternalResource {
-  private static DB EMBEDDED_MARIA_DB;
+public class ProvisionerPostgreSQLInitializer extends ExternalResource {
+  private static EmbeddedPostgres EMBEDDED_POSTGRESQL_DB;
   @Override
-  protected void before() throws ManagedProcessException {
-    EMBEDDED_MARIA_DB = DB.newEmbeddedDB(3306);
-    EMBEDDED_MARIA_DB.start();
+  protected void before() throws IOException {
+    try {
+      EMBEDDED_POSTGRESQL_DB = EmbeddedPostgres.builder().setPort(5432).start();
+    }
+    catch (IOException ioex) {
+      System.out.println(ioex);
+    }
   }
 
   @Override
   protected void after() {
     try {
-      EMBEDDED_MARIA_DB.stop();
-    } catch (ManagedProcessException e) {
-      throw new RuntimeException(e);
+      EMBEDDED_POSTGRESQL_DB.close();
+    } catch (IOException io) {
+      System.out.println(io);
     }
   }
 }

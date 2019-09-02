@@ -18,7 +18,9 @@
  */
 package org.apache.fineract.cn.provisioner.internal.util;
 
+import org.apache.fineract.cn.postgresql.util.PostgreSQLConstants;
 import org.springframework.core.env.Environment;
+import org.apache.fineract.cn.postgresql.util.JdbcUrlBuilder;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -38,33 +40,44 @@ public class DataSourceUtils {
     } catch (ClassNotFoundException cnfex) {
       throw new IllegalArgumentException(cnfex.getMessage(), cnfex);
     }
+
     final String jdbcUrl = JdbcUrlBuilder
-        .create(JdbcUrlBuilder.DatabaseType.MARIADB)
+        .create(JdbcUrlBuilder.DatabaseType.POSTGRESQL)
         .host(databaseConnectionInfo.getHost())
         .port(databaseConnectionInfo.getPort())
+        .instanceName(databaseConnectionInfo.getDatabaseName())
         .build();
     try {
+      try {
+        Class.forName("org.postgresql.Driver");
+      } catch (ClassNotFoundException e) {
+        e.printStackTrace();
+      }
       final Connection connection = DriverManager.getConnection(jdbcUrl, databaseConnectionInfo.getUser(), databaseConnectionInfo.getPassword());
-      connection.setAutoCommit(false);
+      connection.setAutoCommit(true);
       return connection;
     } catch (SQLException sqlex) {
       throw new IllegalStateException(sqlex.getMessage(), sqlex);
     }
   }
 
-  public static Connection createProvisionerConnection(final Environment environment) {
+  public static Connection createProvisionerConnection(final Environment environment, String databaseName) {
     final DatabaseConnectionInfo databaseConnectionInfo = new DatabaseConnectionInfo();
-    databaseConnectionInfo.setDriverClass(environment.getProperty("mariadb.driverClass"));
-    databaseConnectionInfo.setHost(environment.getProperty("mariadb.host"));
-    databaseConnectionInfo.setPort(environment.getProperty("mariadb.port"));
-    databaseConnectionInfo.setUser(environment.getProperty("mariadb.user"));
-    databaseConnectionInfo.setPassword(environment.getProperty("mariadb.password"));
-    final Connection connection = DataSourceUtils.create(databaseConnectionInfo);
+    databaseConnectionInfo.setDriverClass(environment.getProperty("postgresql.driverClass"));
+    databaseName = databaseName.equals(PostgreSQLConstants.POSTGRESQL_DATABASE_NAME_DEFAULT) ? PostgreSQLConstants.POSTGRESQL_DATABASE_NAME_DEFAULT :
+            (databaseName.equals("playground") ? "playground" : "postgres");
+    databaseConnectionInfo.setDatabaseName(databaseName);
+    databaseConnectionInfo.setHost(environment.getProperty("postgresql.host"));
+    databaseConnectionInfo.setPort(environment.getProperty("postgresql.port"));
+    databaseConnectionInfo.setUser(environment.getProperty("postgresql.user"));
+    databaseConnectionInfo.setPassword(environment.getProperty("postgresql.password"));
+
     try {
-      connection.setAutoCommit(false);
-    } catch (SQLException e) {
-      // do nothing
+      final Connection connection = DataSourceUtils.create(databaseConnectionInfo);
+      connection.setAutoCommit(true);
+      return connection;
+    } catch (SQLException error) {
+      throw new IllegalStateException(error.getMessage(), error);
     }
-    return connection;
   }
 }

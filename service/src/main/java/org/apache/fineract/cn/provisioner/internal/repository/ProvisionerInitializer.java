@@ -26,18 +26,20 @@ import org.apache.fineract.cn.provisioner.config.ProvisionerConstants;
 import org.apache.fineract.cn.provisioner.internal.util.DataSourceUtils;
 import java.nio.ByteBuffer;
 import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Date;
 import java.util.UUID;
 import javax.annotation.PostConstruct;
+
 import org.apache.commons.lang.StringUtils;
 import org.apache.fineract.cn.api.util.ApiConstants;
 import org.apache.fineract.cn.cassandra.core.CassandraSessionProvider;
 import org.apache.fineract.cn.cassandra.util.CassandraConnectorConstants;
 import org.apache.fineract.cn.crypto.HashGenerator;
 import org.apache.fineract.cn.crypto.SaltGenerator;
-import org.apache.fineract.cn.mariadb.util.MariaDBConstants;
+import org.apache.fineract.cn.postgresql.util.PostgreSQLConstants;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -58,7 +60,6 @@ public class ProvisionerInitializer {
   private final HashGenerator hashGenerator;
   private final String initialClientId;
   private String metaKeySpaceName;
-  private String mariaDBName;
 
   @Autowired
   public ProvisionerInitializer(final Environment environment, @Qualifier(ProvisionerConstants.LOGGER_NAME) final Logger logger,
@@ -80,12 +81,11 @@ public class ProvisionerInitializer {
       metaKeySpaceName = this.environment.getProperty(
           CassandraConnectorConstants.KEYSPACE_PROP,
           CassandraConnectorConstants.KEYSPACE_PROP_DEFAULT);
-      mariaDBName = this.environment.getProperty(
-          MariaDBConstants.MARIADB_DATABASE_NAME_PROP,
-          MariaDBConstants.MARIADB_DATABASE_NAME_DEFAULT);
 
       this.initializeCassandra();
-      this.initializeDatabase();
+      this.initializeDatabase(PostgreSQLConstants.POSTGRESQL_DATABASE_NAME_DEFAULT);
+      this.createTableTenants();
+      //this.initializeDatabase("playground");
     } catch (final Exception ex) {
       throw new IllegalStateException("Could not initialize service!", ex);
     }
@@ -198,28 +198,58 @@ public class ProvisionerInitializer {
     }
   }
 
-  private void initializeDatabase() throws Exception {
-    final Connection connection = DataSourceUtils.createProvisionerConnection(this.environment);
-    try (final Statement statement = connection.createStatement()) {
-      // create meta data database
-      statement.execute("CREATE DATABASE IF NOT EXISTS " + mariaDBName);
-      statement.execute("USE " + mariaDBName);
-      // create tenants table
-      statement.execute("CREATE TABLE IF NOT EXISTS tenants (" +
-          "  identifier    VARCHAR(32) NOT NULL," +
-          "  driver_class  VARCHAR(255) NOT NULL," +
-          "  database_name VARCHAR(32) NOT NULL," +
-          "  host          VARCHAR(512) NOT NULL," +
-          "  port          VARCHAR(5)  NOT NULL," +
-          "  a_user        VARCHAR(32) NOT NULL," +
-          "  pwd           VARCHAR(32) NOT NULL," +
-          "  PRIMARY KEY (identifier)" +
-          ")");
-      connection.commit();
-    } catch (final SQLException sqlex) {
-      throw new IllegalStateException(sqlex.getMessage(), sqlex);
-    } finally {
-      connection.close();
+  private void initializeDatabase(String postgresDbName) throws Exception {
+
+    this.logger.info("Creating meta database {} ", postgresDbName);
+    try (
+            final Connection connection = DataSourceUtils.createProvisionerConnection(this.environment, "postgres");
+            final Statement testStatement = connection.createStatement();
+            final Statement statement = connection.createStatement()
+            ) {
+      final ResultSet validityQuery = testStatement.executeQuery("SELECT 1");
+      if (validityQuery.next()){
+        this.logger.info("Connection to database postgres established");
+        final ResultSet findDB = statement.executeQuery("SELECT datname FROM pg_database WHERE datname = '" + postgresDbName + "'");
+        if (!findDB.next()) {
+          this.logger.info("Database {} does not exists, creating the database {} now.", postgresDbName);
+          statement.execute("CREATE DATABASE " + postgresDbName);
+        } else {
+          this.logger.info("Database {} already exists.", postgresDbName);
+        }
+      } else {
+        this.logger.warn("Could not connect to database postgres");
+        throw new IllegalMonitorStateException("Could not connect to database postgres");
+      }
+    }
+  }
+
+  private void createTableTenants() throws SQLException {
+    final String databaseName = PostgreSQLConstants.POSTGRESQL_DATABASE_NAME_DEFAULT;
+
+    this.logger.info("Create tenants table in database {} if it does not exists", databaseName);
+    try (
+            final Connection provisionerConnection = DataSourceUtils.createProvisionerConnection(this.environment, databaseName);
+            final Statement testStatement = provisionerConnection.createStatement();
+            final Statement findSeshatStatement = provisionerConnection.createStatement()
+    ) {
+      final ResultSet validityQuery = testStatement.executeQuery("SELECT 1");
+      if (validityQuery.next()) {
+        this.logger.info("Connection to database {} established", databaseName);
+        final ResultSet resultSet = findSeshatStatement.executeQuery("SELECT datname FROM pg_database where datname = '"+ databaseName +"'");
+        if (resultSet.next()) {
+          this.logger.info("Database {} exists !", databaseName);
+          this.logger.info("Creating table tenants now");
+          findSeshatStatement.execute("CREATE TABLE IF NOT EXISTS tenants (identifier VARCHAR(32) NOT NULL, driver_class VARCHAR(255) NOT NULL, database_name VARCHAR(32) NOT NULL, host VARCHAR(512) NOT NULL, port VARCHAR(5) NOT NULL, a_user VARCHAR(32) NOT NULL, pwd VARCHAR(32) NOT NULL, PRIMARY KEY (identifier))");
+        } else {
+          this.logger.warn("Database {} does not exists !", databaseName);
+          }
+      } else {
+        this.logger.warn("Could not connect to database seshat");
+        throw new IllegalMonitorStateException("Could not connect to database seshat");
+      }
+    } catch (SQLException sqlex) {
+      this.logger.error(sqlex.getMessage(), sqlex);
+      throw new IllegalStateException("Could not create table tenants");
     }
   }
 }

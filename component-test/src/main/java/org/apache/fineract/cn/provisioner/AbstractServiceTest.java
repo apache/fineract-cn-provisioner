@@ -59,15 +59,14 @@ public class AbstractServiceTest {
     }
   }
 
-
   private static TestEnvironment testEnvironment = new TestEnvironment(APP_NAME);
-  private static ProvisionerMariaDBInitializer mariaDBInitializer = new ProvisionerMariaDBInitializer();
+  private static ProvisionerPostgreSQLInitializer postgreSQLInitializer = new ProvisionerPostgreSQLInitializer();
   private static ProvisionerCassandraInitializer cassandraInitializer = new ProvisionerCassandraInitializer();
 
   @ClassRule
   public static TestRule orderClassRules = RuleChain
           .outerRule(testEnvironment)
-          .around(mariaDBInitializer)
+          .around(postgreSQLInitializer)
           .around(cassandraInitializer);
 
   @SuppressWarnings("SpringAutowiredFieldsWarningInspection")
