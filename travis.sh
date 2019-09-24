@@ -38,7 +38,7 @@ function build_pullrequest() {
 
 # Builds Forked (non-apache) Repository
 function build_fork() {
-  echo -e "Building branch $TRAVIS_BRANCH of fork $TTRAVIS_REPO_SLUG. Won't publish anything to Artifactory."
+  echo -e "Building branch $TRAVIS_BRANCH of fork $TRAVIS_REPO_SLUG. Won't publish anything to Artifactory."
   ./gradlew publishToMavenLocal rat || EXIT_STATUS=$?
 }
 
@@ -55,13 +55,13 @@ function build_tag() {
 
 }
 
-echo -e "TRAVIS_REPO_SLUG=$TTRAVIS_REPO_SLUG"
+echo -e "TRAVIS_REPO_SLUG=$TRAVIS_REPO_SLUG"
 echo -e "TRAVIS_BRANCH=$TRAVIS_BRANCH"
 echo -e "TRAVIS_TAG=$TRAVIS_TAG"
 echo -e "TRAVIS_COMMIT=${TRAVIS_COMMIT::7}"
 echo -e "TRAVIS_PULL_REQUEST=$TRAVIS_PULL_REQUEST"
 
-if [[ $TTRAVIS_REPO_SLUG != apache* ]]; then
+if [[ $TRAVIS_REPO_SLUG != apache* ]]; then
   build_fork
 elif [ "$TRAVIS_PULL_REQUEST" != "false" ]; then
   build_pullrequest
