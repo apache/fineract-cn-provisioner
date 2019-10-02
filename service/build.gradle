@@ -63,6 +63,8 @@ dependencies {
             [group: 'org.apache.fineract.cn', name: 'cassandra', version: versions.frameworkcassandra],
             [group: 'org.hibernate', name: 'hibernate-validator', version: versions.validator],
             [group: 'org.apache.fineract.cn', name: 'crypto', version: versions.frameworkcrypto],
+            [group: 'io.netty', name: 'netty-all', version: '4.1.39.Final'],
+            [group: 'io.netty', name: 'netty-transport-native-epoll', version: '4.1.39.Final']
     )
 
     testCompile(
