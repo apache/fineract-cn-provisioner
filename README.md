@@ -1,4 +1,4 @@
-# Apache Fineract CN Provisioner [![Build Status](https://api.travis-ci.com/apache/fineract-cn-provisioner.svg?branch=develop)](https://travis-ci.com/apache/fineract-cn-provisioner) [![Docker Cloud Build Status](https://hub.docker.com/r/apache/fineract-cn-provisioner)](https://img.shields.io/docker/cloud/build/apache/fineract-cn-provisioner)
+# Apache Fineract CN Provisioner [![Build Status](https://api.travis-ci.com/apache/fineract-cn-provisioner.svg?branch=develop)](https://travis-ci.com/apache/fineract-cn-provisioner) ![Docker Cloud Build Status](https://img.shields.io/docker/cloud/build/apache/fineract-cn-provisioner)
 
 
 This service provisions services for tenants of an Apache Fineract CN installation.
