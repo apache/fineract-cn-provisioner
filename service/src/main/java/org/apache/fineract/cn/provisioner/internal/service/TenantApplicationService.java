@@ -144,7 +144,7 @@ public class TenantApplicationService {
 
       //InitializeResources on the service being added should occur last, for two reasons:
       // 1.) When the initialization event is put on the queue for this app/tenant combo, the app is fully ready for business.
-      // 2.) If the app depeneds on the provisioning of identitypermissions in its initialization, those resources will be there.
+      // 2.) If the app depends on the provisioning of identitypermissions in its initialization, those resources will be there.
       anubisInitializer.initializeResources(tenantIdentifier, x.name, x.uri);
     });
   }
