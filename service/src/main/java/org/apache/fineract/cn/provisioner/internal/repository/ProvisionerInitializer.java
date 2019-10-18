@@ -85,7 +85,6 @@ public class ProvisionerInitializer {
       this.initializeCassandra();
       this.initializeDatabase(PostgreSQLConstants.POSTGRESQL_DATABASE_NAME_DEFAULT);
       this.createTableTenants();
-      //this.initializeDatabase("playground");
     } catch (final Exception ex) {
       throw new IllegalStateException("Could not initialize service!", ex);
     }
@@ -198,9 +197,9 @@ public class ProvisionerInitializer {
     }
   }
 
-  private void initializeDatabase(String postgresDbName) throws Exception {
+  private void initializeDatabase(String metaDatabaseName) throws Exception {
 
-    this.logger.info("Creating meta database {} ", postgresDbName);
+    this.logger.info("Creating meta database {} ", metaDatabaseName);
     try (
             final Connection connection = DataSourceUtils.createProvisionerConnection(this.environment, "postgres");
             final Statement testStatement = connection.createStatement();
@@ -209,12 +208,12 @@ public class ProvisionerInitializer {
       final ResultSet validityQuery = testStatement.executeQuery("SELECT 1");
       if (validityQuery.next()){
         this.logger.info("Connection to database postgres established");
-        final ResultSet findDB = statement.executeQuery("SELECT datname FROM pg_database WHERE datname = '" + postgresDbName + "'");
+        final ResultSet findDB = statement.executeQuery("SELECT datname FROM pg_database WHERE datname = '" + metaDatabaseName + "'");
         if (!findDB.next()) {
-          this.logger.info("Database {} does not exists, creating the database {} now.", postgresDbName);
-          statement.execute("CREATE DATABASE " + postgresDbName);
+          this.logger.info("Database {} does not exists, creating the database {} now.", metaDatabaseName);
+          statement.execute("CREATE DATABASE " + metaDatabaseName);
         } else {
-          this.logger.info("Database {} already exists.", postgresDbName);
+          this.logger.info("Database {} already exists.", metaDatabaseName);
         }
       } else {
         this.logger.warn("Could not connect to database postgres");
