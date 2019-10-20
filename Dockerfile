@@ -33,6 +33,6 @@ ENV server.max-http-header-size=16384 \
 
 WORKDIR /tmp
 
-COPY --from=builder /builddir/service/build/libs/service-0.1.0-BUILD-SNAPSHOT-boot.jar ./provisioner-service-boot.jar
+COPY --from=builder /builddir/service/build/libs/service-0.1.x-SNAPSHOT-boot.jar ./provisioner-service-boot.jar
 
 CMD ["java", "-jar", "provisioner-service-boot.jar"]
