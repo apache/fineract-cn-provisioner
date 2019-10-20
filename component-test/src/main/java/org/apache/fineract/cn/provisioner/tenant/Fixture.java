@@ -20,6 +20,7 @@ package org.apache.fineract.cn.provisioner.tenant;
 
 
 import org.apache.commons.lang.RandomStringUtils;
+import org.apache.fineract.cn.postgresql.util.PostgreSQLConstants;
 import org.apache.fineract.cn.provisioner.api.v1.domain.CassandraConnectionInfo;
 import org.apache.fineract.cn.provisioner.api.v1.domain.DatabaseConnectionInfo;
 import org.apache.fineract.cn.provisioner.api.v1.domain.Tenant;
@@ -42,12 +43,12 @@ class Fixture {
 
     final DatabaseConnectionInfo databaseConnectionInfo = new DatabaseConnectionInfo();
     compTestTenant.setDatabaseConnectionInfo(databaseConnectionInfo);
-    databaseConnectionInfo.setDriverClass("org.mariadb.jdbc.Driver");
+    databaseConnectionInfo.setDriverClass("org.postgresql.Driver");
     databaseConnectionInfo.setDatabaseName(compTestTenant.getIdentifier());
     databaseConnectionInfo.setHost("localhost");
-    databaseConnectionInfo.setPort("3306");
-    databaseConnectionInfo.setUser("root");
-    databaseConnectionInfo.setPassword("mysql");
+    databaseConnectionInfo.setPort("5432");
+    databaseConnectionInfo.setUser("postgres");
+    databaseConnectionInfo.setPassword("postgres");
 
     return compTestTenant;
   }
