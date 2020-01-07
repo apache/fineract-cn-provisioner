@@ -28,13 +28,23 @@ public class ProvisionerActiveMQProperties {
   @SuppressWarnings("unused")
   final public static String ACTIVEMQ_BROKER_URL_PROP = "activemq.brokerUrl";
   @SuppressWarnings("unused")
+  final public static String ACTIVEMQ_USERNAME_PROP = "activemq.username";
+  @SuppressWarnings("unused")
+  final public static String ACTIVEMQ_PASSWORD_PROP = "activemq.password";
+  @SuppressWarnings("unused")
   final public static String ACTIVEMQ_CONCURRENCY_PROP = "activemq.concurrency";
   @SuppressWarnings("WeakerAccess")
   final public static String ACTIVEMQ_BROKER_URL_DEFAULT = "vm://localhost?broker.persistent=false";
   @SuppressWarnings("WeakerAccess")
+  final public static String ACTIVEMQ_USERNAME_DEFAULT = "";
+  @SuppressWarnings("WeakerAccess")
+  final public static String ACTIVEMQ_PASSWORD_DEFAULT = "";
+  @SuppressWarnings("WeakerAccess")
   final public static String ACTIVEMQ_CONCURRENCY_DEFAULT = "3-10";
 
   private String brokerUrl = ACTIVEMQ_BROKER_URL_DEFAULT;
+  private String username = ACTIVEMQ_USERNAME_DEFAULT;
+  private String password = ACTIVEMQ_PASSWORD_DEFAULT;
   private String concurrency = ACTIVEMQ_CONCURRENCY_DEFAULT;
 
   public ProvisionerActiveMQProperties() {
@@ -46,6 +56,22 @@ public class ProvisionerActiveMQProperties {
 
   public void setBrokerUrl(String brokerUrl) {
     this.brokerUrl = brokerUrl;
+  }
+
+  public String getUsername() {
+    return username;
+  }
+
+  public void setUsername(String username) {
+    this.username = username;
+  }
+
+  public String getPassword() {
+    return password;
+  }
+
+  public void setPassword(String password) {
+    this.password = password;
   }
 
   public String getConcurrency() {
