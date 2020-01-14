@@ -20,6 +20,7 @@ package org.apache.fineract.cn.provisioner.internal.repository;
 
 import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.DataType;
+import com.datastax.driver.core.KeyspaceMetadata;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.schemabuilder.SchemaBuilder;
 import org.apache.fineract.cn.provisioner.config.ProvisionerConstants;
@@ -93,8 +94,9 @@ public class ProvisionerInitializer {
 
   private void initializeCassandra() throws Exception {
     final Session session = this.cassandraSessionProvider.getAdminSession();
+    final KeyspaceMetadata keyspaceMetadata = session.getCluster().getMetadata().getKeyspace(metaKeySpaceName);
 
-    if (session.getCluster().getMetadata().getKeyspace(metaKeySpaceName).getTable(ConfigEntity.TABLE_NAME) == null) {
+    if (keyspaceMetadata.getTable(ConfigEntity.TABLE_NAME) == null) {
       //create config family
       final String createConfigTableStatement = SchemaBuilder.createTable(ConfigEntity.TABLE_NAME)
           .addPartitionKey(ConfigEntity.NAME_COLUMN, DataType.text())
@@ -102,6 +104,10 @@ public class ProvisionerInitializer {
           .buildInternal();
 
       session.execute(createConfigTableStatement);
+
+      while(keyspaceMetadata.getTable(ConfigEntity.TABLE_NAME) == null) {
+        logger.debug("Waiting for config table to get created.");
+      }
 
       final byte[] secret = this.saltGenerator.createRandomSalt();
       final BoundStatement configBoundStatement = session.prepare("INSERT INTO config (name, secret) VALUES (?, ?)").bind();
@@ -120,6 +126,10 @@ public class ProvisionerInitializer {
           .buildInternal();
 
       session.execute(createUsersTableStatement);
+
+      while(keyspaceMetadata.getTable(UserEntity.TABLE_NAME) == null) {
+        logger.debug("Waiting for user table to get created.");
+      }
 
       final String username = ApiConstants.SYSTEM_SU;
       final byte[] hashedPassword = Base64Utils.decodeFromString(ProvisionerConstants.INITIAL_PWD);
@@ -187,6 +197,9 @@ public class ProvisionerInitializer {
       final String clientId = StringUtils.isEmpty(initialClientId) ? UUID.randomUUID().toString() : initialClientId;
       this.logger.info(clientId);
 
+      while(keyspaceMetadata.getTable(ClientEntity.TABLE_NAME) == null) {
+        logger.debug("Waiting for client table to get created.");
+      }
 
       final BoundStatement clientBoundStatement = session.prepare("INSERT INTO clients (name, description, vendor, homepage) VALUES (?, ?, ?, ?)").bind();
       clientBoundStatement.setString("name", clientId);
