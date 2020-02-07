@@ -110,6 +110,10 @@ public class TenantCassandraRepository {
               ReplicationStrategyResolver.replicationStrategy(
                       tenant.getReplicationType(),
                       tenant.getReplicas()));
+
+      while(session.getCluster().getMetadata().getKeyspace(tenant.getKeyspaceName()) == null) {
+        System.out.println("Waiting for ketspace to get created.");
+      }
     }
     catch (final AlreadyExistsException e) {
       throw ServiceException.badRequest("Tenant keyspace {0} already exists!", tenant.getKeyspaceName());
@@ -126,6 +130,11 @@ public class TenantCassandraRepository {
                     .addColumn("failure_message", DataType.text())
                     .buildInternal();
     session.execute(createCommandSourceTable);
+
+    while(session.getCluster().getMetadata().getKeyspace(tenant.getKeyspaceName()).getTable("command_source") == null) {
+      System.out.println("Waiting for command_source table to get created.");
+    }
+
     session.close();
 
     tenantEntityMapper.save(tenant);
@@ -143,7 +152,16 @@ public class TenantCassandraRepository {
       final AuthProvider authProvider = new PlainTextAuthProvider(user, pwd);
       clusterBuilder.withAuthProvider(authProvider);
     }
+
     ContactPointUtils.process(clusterBuilder, tenantEntity.getContactPoints());
+
+    if (this.environment.containsProperty(CassandraConnectorConstants.SSL_ENABLED_PROP)) {
+      final String sslEnabled = this.environment.getProperty(CassandraConnectorConstants.SSL_ENABLED_PROP);
+
+      if(sslEnabled.equals("true")) {
+        return clusterBuilder.withSSL().build();
+      }
+    }
 
     return clusterBuilder.build();
   }
