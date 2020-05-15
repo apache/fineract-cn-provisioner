@@ -77,7 +77,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.cloud.netflix.feign.EnableFeignClients;
+import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.cloud.netflix.ribbon.RibbonClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -262,8 +262,8 @@ public class TestTenantApplicationAssignment {
 
     @Override
     public ApplicationSignatureSet answer(final InvocationOnMock invocation) throws Throwable {
-      final String timestamp = invocation.getArgumentAt(0, String.class);
-      final Signature identityManagerSignature = invocation.getArgumentAt(1, Signature.class);
+      final String timestamp = invocation.getArgument(0, String.class);
+      final Signature identityManagerSignature = invocation.getArgument(1, Signature.class);
       validSecurityContext = systemSecurityEnvironment.isValidSystemSecurityContext(target, "1", tenantIdentifier);
 
       return new ApplicationSignatureSet(
@@ -339,7 +339,7 @@ public class TestTenantApplicationAssignment {
       validSecurityContext = validSecurityContext && validSecurityContextForThisCall;
       callCount++;
 
-      final PermittableGroup arg = invocation.getArgumentAt(0, PermittableGroup.class);
+      final PermittableGroup arg = invocation.getArgument(0, PermittableGroup.class);
       identityListener.onCreatePermittableGroup(tenantIdentifier, arg.getIdentifier());
       return null;
     }
@@ -366,8 +366,8 @@ public class TestTenantApplicationAssignment {
     public Void answer(final InvocationOnMock invocation) throws Throwable {
       validSecurityContext = systemSecurityEnvironment.isValidSystemSecurityContext("identity", "1", tenantIdentifier);
 
-      final String applicationIdentifier = invocation.getArgumentAt(0, String.class);
-      final String keyTimestamp = invocation.getArgumentAt(1, String.class);
+      final String applicationIdentifier = invocation.getArgument(0, String.class);
+      final String keyTimestamp = invocation.getArgument(1, String.class);
       identityListener.onSetApplicationSignature(tenantIdentifier,
               gson.toJson(new ApplicationSignatureEvent(applicationIdentifier, keyTimestamp)));
       return null;
@@ -396,7 +396,7 @@ public class TestTenantApplicationAssignment {
       validSecurityContext = validSecurityContext && validSecurityContextForThisCall;
       callCount++;
 
-      final String callApplicationIdentifier = invocation.getArgumentAt(0, String.class);
+      final String callApplicationIdentifier = invocation.getArgument(0, String.class);
       Assert.assertEquals(this.applicationIdentifier, callApplicationIdentifier);
       return null;
     }

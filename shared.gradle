@@ -16,22 +16,22 @@
  */
 
 group 'org.apache.fineract.cn.provisioner'
-version '0.1.0-BUILD-SNAPSHOT'
+version 'spring_boot_2-SNAPSHOT'
 
 ext.versions = [
-        fineractidentityservice : '0.1.0-BUILD-SNAPSHOT',
-        frameworkanubis         : '0.1.0-BUILD-SNAPSHOT',
-        frameworkanput          : '0.1.0-BUILD-SNAPSHOT',
-        frameworkapi            : '0.1.0-BUILD-SNAPSHOT',
-        frameworklang           : '0.1.0-BUILD-SNAPSHOT',
-        frameworkasync          : '0.1.0-BUILD-SNAPSHOT',
-        frameworkcassandra      : '0.1.0-BUILD-SNAPSHOT',
-        frameworkmariadb        : '0.1.0-BUILD-SNAPSHOT',
-        frameworkcrypto         : '0.1.0-BUILD-SNAPSHOT',
-        frameworktest           : '0.1.0-BUILD-SNAPSHOT',
-        springcontext           : '4.3.3.RELEASE',
+        fineractidentityservice : 'spring_boot_2-SNAPSHOT',
+        frameworkanubis         : 'spring_boot_2-SNAPSHOT',
+        frameworkanput          : 'spring_boot_2-SNAPSHOT',
+        frameworkapi            : 'spring_boot_2-SNAPSHOT',
+        frameworklang           : 'spring_boot_2-SNAPSHOT',
+        frameworkasync          : 'spring_boot_2-SNAPSHOT',
+        frameworkcassandra      : 'spring_boot_2-SNAPSHOT',
+        frameworkmariadb        : 'spring_boot_2-SNAPSHOT',
+        frameworkcrypto         : 'spring_boot_2-SNAPSHOT',
+        frameworktest           : 'spring_boot_2-SNAPSHOT',
+        springcontext           : '5.2.5.RELEASE',
         activeMQ                : '5.13.2',
-        validator               : '5.3.0.Final'
+        validator               : '6.1.4.Final'
 ]
 
 tasks.withType(JavaCompile) {
@@ -47,8 +47,8 @@ repositories {
 
 dependencyManagement {
     imports {
-        mavenBom 'io.spring.platform:platform-bom:Athens-RELEASE'
-        mavenBom 'org.springframework.cloud:spring-cloud-dependencies:Camden.SR1'
+        mavenBom 'io.spring.platform:platform-bom:Cairo-SR8'
+        mavenBom 'org.springframework.cloud:spring-cloud-dependencies:Hoxton.SR3'
     }
 }
 
@@ -61,8 +61,9 @@ ext['spring-data-releasetrain.version'] = 'Gosling-SR2A'
 dependencies {
     compile(
             [group: 'com.google.code.findbugs', name: 'jsr305'],
-            [group: 'org.apache.fineract.cn', name: 'postgresql', version: '0.1.0-BUILD-SNAPSHOT'],
-            [group: 'postgresql', name: 'postgresql', version: '9.0-801.jdbc4']
+            [group: 'org.apache.fineract.cn', name: 'postgresql', version: 'spring_boot_2-SNAPSHOT'],
+            [group: 'org.postgresql', name: 'postgresql', version: '42.2.12'],
+            [group: 'org.mockito', name: 'mockito-core', version: '3.3.3']
     )
 
     testCompile(
@@ -115,6 +116,10 @@ rat {
             "README.md",
             "**/.dockerignore/**",
             "**/logs/**/*.log",
-            "**/banner.txt"
+            "**/banner.txt",
+            ".settings/**",
+            ".project",
+            ".classpath",
+            "**/bin/**"
     ]
 }
