@@ -42,7 +42,7 @@ tasks.withType(JavaCompile) {
 repositories {
     jcenter()
     mavenLocal()
-    maven { url 'https://mifos.jfrog.io/mifos/libs-snapshot/' }
+    maven { url 'http://artifactory-flexcore.bitnamiapp.com/artifactory/' }
 }
 
 dependencyManagement {
