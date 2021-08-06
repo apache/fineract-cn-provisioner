@@ -42,7 +42,7 @@ tasks.withType(JavaCompile) {
 repositories {
     jcenter()
     mavenLocal()
-    maven { url 'http://artifactory-flexcore.bitnamiapp.com/artifactory/' }
+    maven { url System.getenv("ARTIFACTORY_URL") }
 }
 
 dependencyManagement {
@@ -75,7 +75,7 @@ jar {
 }
 
 artifactory {
-    contextUrl = System.getenv("ARTIFACTORY_URL")
+    contextUrl = System.getenv("ARTIFACTORY_URL_PUBLISH")
     publish {
         repository {
             repoKey = System.getenv("ARTIFACTORY_REPOKEY")
