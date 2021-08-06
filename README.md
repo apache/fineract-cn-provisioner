@@ -23,7 +23,8 @@ This service provisions services for tenants of an Apache Fineract CN installati
 
 The following variables are required for publishg the binary artifacts. Values are examples, change them to fit your environment.
 ```console
-ARTIFACTORY_URL = 'https://url-to-artifactory/artifactory/'
+ARTIFACTORY_URL = 'https://url-to-artifactory/artifactory/libs-snapshot/'
+ARTIFACTORY_URL_PUBLISH = 'https://url-to-artifactory/artifactory/'
 ARTIFACTORY_USER = 'user'
 ARTIFACTORY_PASSWORD = 'password'
 ARTIFACTORY_REPOKEY = 'libs-snapshot-local'
