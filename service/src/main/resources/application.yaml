@@ -20,7 +20,7 @@
 eureka:
   client:
     serviceUrl:
-      defaultZone: http://localhost:8761/eureka/
+      defaultZone: http://eureka:8761/eureka/
 
 server:
   port: 2020
@@ -31,7 +31,7 @@ flyway:
 
 cassandra:
   clusterName: staging_cluster
-  contactPoints: 127.0.0.1:9042,127.0.0.2:9042,127.0.0.3:9042
+  contactPoints: cassandra:9042,cassandra2:9042,cassandra3:9042
   replication:
     default:
       type: Network
@@ -40,7 +40,7 @@ cassandra:
 postgresql:
   driverClass: org.postgresql.Driver
   database: seshat
-  host: localhost
+  host: postgres
   port: 5432
   user: postgres
   password: postgres
@@ -48,6 +48,6 @@ postgresql:
 spring:
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:5432/seshat
+    url: jdbc:postgresql://postgres:5432/seshat
     username: postgres
     password: postgres
