@@ -36,7 +36,7 @@ class Fixture {
     final CassandraConnectionInfo cassandraConnectionInfo = new CassandraConnectionInfo();
     compTestTenant.setCassandraConnectionInfo(cassandraConnectionInfo);
     cassandraConnectionInfo.setClusterName("Test Cluster" + RandomStringUtils.randomAlphabetic(3));
-    cassandraConnectionInfo.setContactPoints("127.0.0.1:9142");
+    cassandraConnectionInfo.setContactPoints("cassandra:9042");
     cassandraConnectionInfo.setKeyspace(compTestTenant.getIdentifier());
     cassandraConnectionInfo.setReplicas("3");
     cassandraConnectionInfo.setReplicationType("Simple");
@@ -45,7 +45,7 @@ class Fixture {
     compTestTenant.setDatabaseConnectionInfo(databaseConnectionInfo);
     databaseConnectionInfo.setDriverClass("org.postgresql.Driver");
     databaseConnectionInfo.setDatabaseName(compTestTenant.getIdentifier());
-    databaseConnectionInfo.setHost("localhost");
+    databaseConnectionInfo.setHost("postgres");
     databaseConnectionInfo.setPort("5432");
     databaseConnectionInfo.setUser("postgres");
     databaseConnectionInfo.setPassword("postgres");
