@@ -4,6 +4,32 @@
 This service provisions services for tenants of an Apache Fineract CN installation.
 [Read more](https://cwiki.apache.org/confluence/display/FINERACT/Fineract+CN+Project+Structure#FineractCNProjectStructure-provisioner).
 
+## Requirements
+
+### Fineract CN Libraries
+
+01. fineract-cn-lang
+02. fineract-cn-postgresql
+03. fineract-cn-anubis
+04. fineract-cn-permitted-feign-client
+05. fineract-cn-identity
+06. fineract-cn-api
+07. fineract-cn-async
+08. fineract-cn-cassandra
+09. fineract-cn-crypto
+10. fineract-cn-test
+
+### Environment Variables 
+
+The following variables are required for publishg the binary artifacts. Values are examples, change them to fit your environment.
+```console
+ARTIFACTORY_URL = 'https://url-to-artifactory/artifactory/libs-snapshot/'
+ARTIFACTORY_URL_PUBLISH = 'https://url-to-artifactory/artifactory/'
+ARTIFACTORY_USER = 'user'
+ARTIFACTORY_PASSWORD = 'password'
+ARTIFACTORY_REPOKEY = 'libs-snapshot-local'
+```
+
 ## Abstract
 Apache Fineract CN is an application framework for digital financial services, a system to support nationwide and cross-national financial transactions and help to level and speed the creation of an inclusive, interconnected digital economy for every nation in the world.
 

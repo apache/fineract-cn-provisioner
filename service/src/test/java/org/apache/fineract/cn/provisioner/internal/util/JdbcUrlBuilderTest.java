@@ -23,7 +23,7 @@ import org.junit.Test;
 
 public class JdbcUrlBuilderTest {
 
-  private final static String POSTGRES_DB_JDBC_URL = "jdbc:postgresql:localhost:5432/comp_test";
+  private final static String POSTGRES_DB_JDBC_URL = "jdbc:postgresql:postgres:5432/comp_test";
 
   public JdbcUrlBuilderTest() {
     super();
@@ -33,7 +33,7 @@ public class JdbcUrlBuilderTest {
   public void shouldCreatePostgresUrl() {
     final String postgresDbUrl = JdbcUrlBuilder
         .create(JdbcUrlBuilder.DatabaseType.POSTGRESQL)
-        .host("localhost")
+        .host("postgres")
         .port("5432")
         .instanceName("comp_test")
         .build();

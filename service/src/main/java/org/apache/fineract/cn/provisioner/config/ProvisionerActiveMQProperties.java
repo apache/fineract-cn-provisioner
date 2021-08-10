@@ -30,7 +30,7 @@ public class ProvisionerActiveMQProperties {
   @SuppressWarnings("unused")
   final public static String ACTIVEMQ_CONCURRENCY_PROP = "activemq.concurrency";
   @SuppressWarnings("WeakerAccess")
-  final public static String ACTIVEMQ_BROKER_URL_DEFAULT = "vm://localhost?broker.persistent=false";
+  final public static String ACTIVEMQ_BROKER_URL_DEFAULT = "vm://activemq?broker.persistent=false";
   @SuppressWarnings("WeakerAccess")
   final public static String ACTIVEMQ_CONCURRENCY_DEFAULT = "3-10";
 
