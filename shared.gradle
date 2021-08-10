@@ -42,7 +42,13 @@ tasks.withType(JavaCompile) {
 repositories {
     jcenter()
     mavenLocal()
-    maven { url System.getenv("ARTIFACTORY_URL") }
+    maven { 
+        url System.getenv("ARTIFACTORY_URL") 
+        credentials {
+            username System.getenv("ARTIFACTORY_USER")
+            password System.getenv("ARTIFACTORY_PASSWORD")
+        }
+    }
 }
 
 dependencyManagement {
