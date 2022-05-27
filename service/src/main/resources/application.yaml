@@ -17,10 +17,10 @@
 # under the License.
 #
 
-eureka:
-  client:
-    serviceUrl:
-      defaultZone: http://localhost:8761/eureka/
+#eureka:
+#  client:
+#    serviceUrl:
+#      defaultZone: http://localhost:8761/eureka/
 
 server:
   port: 2020
@@ -51,3 +51,14 @@ spring:
     url: jdbc:postgresql://localhost:5432/seshat
     username: postgres
     password: postgres
+
+kubernetes:
+  provisioner:
+    service:
+      name: provisioner-service
+    server:
+      port: 2020
+
+ribbon:
+  eureka:
+    enabled: false

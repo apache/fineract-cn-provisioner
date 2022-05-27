@@ -42,7 +42,7 @@ import org.springframework.web.bind.annotation.RequestParam;
  * @author Myrle Krantz
  */
 @SuppressWarnings("unused")
-@FeignClient(name="provisioner-v1", path="/provisioner/v1", configuration=CustomFeignClientsConfiguration.class)
+@FeignClient(path="/provisioner/v1", url="http://${kubernetes.provisioner.service.name}:${kubernetes.provisioner.server.port}", configuration=CustomFeignClientsConfiguration.class)
 public interface Provisioner {
 
 

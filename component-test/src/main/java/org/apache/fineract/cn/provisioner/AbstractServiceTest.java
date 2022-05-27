@@ -46,7 +46,7 @@ public class AbstractServiceTest {
 
   @Configuration
   @EnableFeignClients(basePackages = {"org.apache.fineract.cn.provisioner.api.v1.client"})
-  @RibbonClient(name = APP_NAME)
+  // @RibbonClient(name = APP_NAME)
   @Import({ProvisionerServiceConfig.class})
   public static class TestConfiguration {
     public TestConfiguration() {
